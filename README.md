@@ -11,8 +11,6 @@ stay aligned while native oclif commands are extracted later.
 ## Install
 
 ```fish
-npm config set @proof-computer:registry https://npm.pkg.github.com
-npm login --scope=@proof-computer --auth-type=legacy --registry=https://npm.pkg.github.com
 npm install --global @proof-computer/proof-cli
 proof plugins install @proof-computer/proof-cli-switchboard
 proof switchboard --help

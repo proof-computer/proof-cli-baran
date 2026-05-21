@@ -1,6 +1,6 @@
 {
   "name": "@proof-computer/proof-cli-switchboard",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Switchboard plugin for the PROOF command line interface.",
   "private": false,
   "type": "module",
@@ -22,15 +22,12 @@
     "type": "git",
     "url": "git+https://github.com/proof-computer/proof-cli-switchboard.git"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
     "@oclif/core": "^4.11.3",
-    "@proof-computer/switchboard-cli": "0.1.21"
+    "@proof-computer/switchboard-cli": "0.1.22"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
