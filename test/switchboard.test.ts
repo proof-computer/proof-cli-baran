@@ -45,10 +45,7 @@ import SwitchboardRelayCatalogSetState, {
 } from "../src/commands/switchboard/relay/catalog/set-state.js";
 import { runSwitchboardRelayDnsPlanNative } from "../src/commands/switchboard/relay/dns/plan.js";
 import { runSwitchboardRelayDnsVerifyNative } from "../src/commands/switchboard/relay/dns/verify.js";
-import { runSwitchboardRelayDeploymentStatusNative } from "../src/commands/switchboard/relay/deployment-status.js";
-import { runSwitchboardRelayDeploymentsNative } from "../src/commands/switchboard/relay/deployments.js";
 import { runSwitchboardRelayDiffNative } from "../src/commands/switchboard/relay/diff.js";
-import { runSwitchboardRelayInspectNative } from "../src/commands/switchboard/relay/inspect.js";
 import { runSwitchboardRelayKeygenNative } from "../src/commands/switchboard/relay/keygen.js";
 import { runSwitchboardRelayListNative } from "../src/commands/switchboard/relay/list.js";
 import { runSwitchboardRelayLogsNative } from "../src/commands/switchboard/relay/logs.js";
@@ -103,10 +100,7 @@ const relayCatalogBuildCommandUrl = pathToFileURL(path.join(repoRoot, "src", "co
 const relayCatalogSetStateCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "catalog", "set-state.ts")).href;
 const relayDnsPlanCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "dns", "plan.ts")).href;
 const relayDnsVerifyCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "dns", "verify.ts")).href;
-const relayDeploymentStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "deployment-status.ts")).href;
-const relayDeploymentsCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "deployments.ts")).href;
 const relayDiffCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "diff.ts")).href;
-const relayInspectCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "inspect.ts")).href;
 const relayKeygenCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "keygen.ts")).href;
 const relayListCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "list.ts")).href;
 const relayLogsCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "logs.ts")).href;
@@ -417,16 +411,6 @@ test("prints native relay pick-processor help through the oclif command", () => 
   assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
 });
 
-test("prints native relay deployments help through the oclif command", () => {
-  const result = runRelayDeploymentsCommand(["--help"]);
-
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Show Switchboard relay deployment history/u);
-  assert.match(result.stdout, /<relay-id>/u);
-  assert.match(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
-});
-
 test("prints native relay logs help through the oclif command", () => {
   const result = runRelayLogsCommand(["--help"]);
 
@@ -487,32 +471,6 @@ test("prints native relay budget help through the oclif command", () => {
   assert.match(result.stdout, /--margin-percent/u);
   assert.match(result.stdout, /--update/u);
   assert.match(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
-});
-
-test("prints native relay deployment-status help through the oclif command", () => {
-  const result = runRelayDeploymentStatusCommand(["--help"]);
-
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Read Acurast deployment status for a Switchboard relay/u);
-  assert.match(result.stdout, /<relay-id>/u);
-  assert.match(result.stdout, /--deployment-id/u);
-  assert.match(result.stdout, /--spec-file/u);
-  assert.doesNotMatch(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
-});
-
-test("prints native relay inspect help through the oclif command", () => {
-  const result = runRelayInspectCommand(["--help"]);
-
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Inspect Acurast deployment details for a Switchboard relay/u);
-  assert.match(result.stdout, /<relay-id>/u);
-  assert.match(result.stdout, /--deployment-id/u);
-  assert.match(result.stdout, /--spec-file/u);
-  assert.match(result.stdout, /--watch/u);
-  assert.match(result.stdout, /--events/u);
-  assert.doesNotMatch(result.stdout, /--json/u);
   assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
 });
 
@@ -1086,18 +1044,6 @@ test("forwards native relay pick-processor args to the shared Switchboard runner
   ]);
 });
 
-test("forwards native relay deployments args to the shared Switchboard runner", async () => {
-  let forwarded: readonly string[] | undefined;
-  const exitCode = await runSwitchboardRelayDeploymentsNative(["relay-d", "--json"], {
-    runner: async (argv) => {
-      forwarded = [...(argv ?? [])];
-    }
-  });
-
-  assert.equal(exitCode, 0);
-  assert.deepEqual(forwarded, ["relay-d", "--json"]);
-});
-
 test("forwards native relay logs args to the shared Switchboard runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayLogsNative(
@@ -1238,44 +1184,6 @@ test("forwards native relay sync args to the shared Switchboard runner", async (
 
   assert.equal(exitCode, 0);
   assert.deepEqual(forwarded, ["--manifest-url", "https://control.example/v1/network-manifest", "--dry-run"]);
-});
-
-test("forwards native relay deployment-status args to the shared Switchboard runner", async () => {
-  let forwarded: readonly string[] | undefined;
-  const exitCode = await runSwitchboardRelayDeploymentStatusNative(
-    ["relay-d", "--deployment-id", "51808", "--spec", "relays/relay-d.json"],
-    {
-      runner: async (argv) => {
-        forwarded = [...(argv ?? [])];
-      }
-    }
-  );
-
-  assert.equal(exitCode, 0);
-  assert.deepEqual(forwarded, ["relay-d", "--deployment-id", "51808", "--spec", "relays/relay-d.json"]);
-});
-
-test("forwards native relay inspect args to the shared Switchboard runner", async () => {
-  let forwarded: readonly string[] | undefined;
-  const exitCode = await runSwitchboardRelayInspectNative(
-    ["relay-d", "--deployment-id", "51808", "--spec", "relays/relay-d.json", "--watch", "--events"],
-    {
-      runner: async (argv) => {
-        forwarded = [...(argv ?? [])];
-      }
-    }
-  );
-
-  assert.equal(exitCode, 0);
-  assert.deepEqual(forwarded, [
-    "relay-d",
-    "--deployment-id",
-    "51808",
-    "--spec",
-    "relays/relay-d.json",
-    "--watch",
-    "--events"
-  ]);
 });
 
 test("returns nonzero when native relay verify reports failed checks", async () => {
@@ -1903,20 +1811,6 @@ test("falls back to compatibility for relay pick-processor when the shared runne
   assert.deepEqual(forwarded, ["relay", "pick-processor", "relay-d", "--pin", "auto"]);
 });
 
-test("falls back to compatibility for relay deployments when the shared runner is unavailable", async () => {
-  let forwarded: readonly string[] | undefined;
-  const exitCode = await runSwitchboardRelayDeploymentsNative(["relay-d", "--json"], {
-    loadRunner: async () => undefined,
-    compatibilityRunner: async (argv) => {
-      forwarded = [...argv];
-      return 0;
-    }
-  });
-
-  assert.equal(exitCode, 0);
-  assert.deepEqual(forwarded, ["relay", "deployments", "relay-d", "--json"]);
-});
-
 test("falls back to compatibility for relay logs when the shared runner is unavailable", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayLogsNative(["relay-d", "--limit", "20", "--json"], {
@@ -1985,34 +1879,6 @@ test("falls back to compatibility for relay budget when the shared runner is una
 
   assert.equal(exitCode, 0);
   assert.deepEqual(forwarded, ["relay", "budget", "7d", "--json"]);
-});
-
-test("falls back to compatibility for relay deployment-status when the shared runner is unavailable", async () => {
-  let forwarded: readonly string[] | undefined;
-  const exitCode = await runSwitchboardRelayDeploymentStatusNative(["relay-d", "--deployment-id", "51808"], {
-    loadRunner: async () => undefined,
-    compatibilityRunner: async (argv) => {
-      forwarded = [...argv];
-      return 0;
-    }
-  });
-
-  assert.equal(exitCode, 0);
-  assert.deepEqual(forwarded, ["relay", "deployment-status", "relay-d", "--deployment-id", "51808"]);
-});
-
-test("falls back to compatibility for relay inspect when the shared runner is unavailable", async () => {
-  let forwarded: readonly string[] | undefined;
-  const exitCode = await runSwitchboardRelayInspectNative(["relay-d", "--deployment-id", "51808", "--watch"], {
-    loadRunner: async () => undefined,
-    compatibilityRunner: async (argv) => {
-      forwarded = [...argv];
-      return 0;
-    }
-  });
-
-  assert.equal(exitCode, 0);
-  assert.deepEqual(forwarded, ["relay", "inspect", "relay-d", "--deployment-id", "51808", "--watch"]);
 });
 
 test("falls back to compatibility for relay whoami when the shared runner is unavailable", async () => {
@@ -2999,26 +2865,6 @@ function runRelayPickProcessorCommand(args: readonly string[]) {
   );
 }
 
-function runRelayDeploymentsCommand(args: readonly string[]) {
-  return spawnSync(
-    process.execPath,
-    [
-      "--import",
-      "tsx",
-      "--eval",
-      `const {default: SwitchboardRelayDeployments} = await import(${JSON.stringify(relayDeploymentsCommandUrl)}); await SwitchboardRelayDeployments.run(${JSON.stringify(args)});`
-    ],
-    {
-      cwd: repoRoot,
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        NODE_ENV: "test"
-      }
-    }
-  );
-}
-
 function runRelayLogsCommand(args: readonly string[]) {
   return spawnSync(
     process.execPath,
@@ -3147,46 +2993,6 @@ function runRelayCatalogSetStateCommand(args: readonly string[]) {
       "tsx",
       "--eval",
       `const {default: SwitchboardRelayCatalogSetState} = await import(${JSON.stringify(relayCatalogSetStateCommandUrl)}); await SwitchboardRelayCatalogSetState.run(${JSON.stringify(args)});`
-    ],
-    {
-      cwd: repoRoot,
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        NODE_ENV: "test"
-      }
-    }
-  );
-}
-
-function runRelayDeploymentStatusCommand(args: readonly string[]) {
-  return spawnSync(
-    process.execPath,
-    [
-      "--import",
-      "tsx",
-      "--eval",
-      `const {default: SwitchboardRelayDeploymentStatus} = await import(${JSON.stringify(relayDeploymentStatusCommandUrl)}); await SwitchboardRelayDeploymentStatus.run(${JSON.stringify(args)});`
-    ],
-    {
-      cwd: repoRoot,
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        NODE_ENV: "test"
-      }
-    }
-  );
-}
-
-function runRelayInspectCommand(args: readonly string[]) {
-  return spawnSync(
-    process.execPath,
-    [
-      "--import",
-      "tsx",
-      "--eval",
-      `const {default: SwitchboardRelayInspect} = await import(${JSON.stringify(relayInspectCommandUrl)}); await SwitchboardRelayInspect.run(${JSON.stringify(args)});`
     ],
     {
       cwd: repoRoot,

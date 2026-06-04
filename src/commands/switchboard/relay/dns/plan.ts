@@ -26,7 +26,7 @@ export default class SwitchboardRelayDnsPlan extends Command {
       char: "h"
     }),
     spec: Flags.string({
-      description: "Relay deployment spec path."
+      description: "Relay spec path."
     }),
     "spec-file": Flags.string({
       description: "Alias for --spec."
@@ -118,7 +118,7 @@ USAGE
   $ ${bin} switchboard relay dns plan <relay-id> [options]
 
 FLAGS
-  --spec <path>           Relay deployment spec path.
+  --spec <path>           Relay spec path.
   --spec-file <path>      Alias for --spec.
   --resolvers <list>      Comma-separated DNS resolvers for public CNAME validation.
   --ops-profile <name>    Switchboard ops profile for admin defaults.

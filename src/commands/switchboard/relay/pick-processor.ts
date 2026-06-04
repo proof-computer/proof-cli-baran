@@ -159,7 +159,7 @@ FLAGS
   --context <name>           Switchboard context name for runtime defaults.
 
 DESCRIPTION
-  Reads the relay deployment spec, checks Acurast manager processor freshness
+  Reads the relay spec, checks Acurast manager processor freshness
   and schedule availability, and prints candidates. With --pin, it updates only
   the local relay spec's acurast.instantMatchProcessors list. It does not
   deploy jobs, publish catalogs, submit transactions, or mutate live relay

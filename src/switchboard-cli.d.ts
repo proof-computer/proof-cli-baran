@@ -36,10 +36,7 @@ declare module "@proof-computer/switchboard-cli" {
   export function runSwitchboardRelayCatalogSetState(argv?: readonly string[]): Promise<void>;
   export function runSwitchboardRelayDnsPlan(argv?: readonly string[]): Promise<void>;
   export function runSwitchboardRelayDnsVerify(argv?: readonly string[]): Promise<void>;
-  export function runSwitchboardRelayDeploymentStatus(argv?: readonly string[]): Promise<void>;
-  export function runSwitchboardRelayDeployments(argv?: readonly string[]): Promise<void>;
   export function runSwitchboardRelayDiff(argv?: readonly string[]): Promise<void>;
-  export function runSwitchboardRelayInspect(argv?: readonly string[]): Promise<void>;
   export function runSwitchboardRelayKeygen(argv?: readonly string[]): Promise<void>;
   export function runSwitchboardRelayList(argv?: readonly string[]): Promise<void>;
   export function runSwitchboardRelayLogs(argv?: readonly string[]): Promise<void>;

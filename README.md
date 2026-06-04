@@ -20,23 +20,25 @@ state mutation `catalog set-state`, gateway host commands `gateway setup`,
 `gateway discover`, `gateway status`, and `gateway upgrade`, read-only relay
 diagnostics `relay status`, read-only relay inventory `relay list`/`relay ls`,
 read-only relay inventory comparison `relay diff`, local relay inventory sync
-`relay sync`, local relay deployment history `relay deployments`, local relay
-identity diagnostics `relay whoami`, encrypted relay log inspection
+`relay sync`, local relay identity diagnostics `relay whoami`, encrypted relay log inspection
 `relay logs`, live relay verification `relay verify`, local relay budget
 calculation `relay budget`, local relay processor availability and explicit
 spec pinning `relay pick-processor`,
 read-only relay DNS diagnostics `relay dns plan` and `relay dns verify`,
-read-only relay Acurast deployment status `relay deployment-status`,
-read-only relay Acurast deployment inspection `relay inspect`, relay health
-transition watching `relay watch`, local relay key generation `relay keygen`,
-local relay spec generation `relay scaffold`, local relay catalog artifact
-build `relay catalog build`, local relay catalog state mutation
-`relay catalog set-state`, and the deploy recovery/diagnostic
+relay health transition watching `relay watch`, local relay key generation
+`relay keygen`, local relay spec generation `relay scaffold`, local relay
+catalog artifact build `relay catalog build`, local relay catalog state
+mutation `relay catalog set-state`, and the deploy recovery/diagnostic
 subcommands now have native oclif entrypoints that call shared
 `switchboard-cli` runners.
-Validator launch, `relay dns apply/remove`, `relay backfill-specs`, broader
-relay/admin commands, bootstrap, ops, and commands that have not been
-extracted yet still forward through the compatibility wrapper.
+The remaining relay commands are audited/provisional diagnostics or local
+inventory tools. Relay lifecycle-management verbs are not being migrated:
+`relay deploy`, `relay replace`, `relay rotate-key`, `relay drain`,
+`relay promote`, `relay deployments`, `relay deployment-status`, and
+`relay inspect` are dropped internal subcommands, not compatibility surfaces.
+Validator launch, `relay dns apply/remove`, `relay backfill-specs`, bootstrap,
+ops, and commands that have
+not been extracted yet still forward through the compatibility wrapper.
 
 ## Install
 
@@ -103,8 +105,7 @@ Gateway host commands use
 `runSwitchboardRelayDiff(argv)`. Local relay inventory sync uses
 `runSwitchboardRelaySync(argv)` while preserving signed discovery, local
 `relays/catalog.json` writes, missing stub-spec generation, and existing-spec
-preservation. Local relay deployment history uses
-`runSwitchboardRelayDeployments(argv)`. Local relay identity diagnostics use
+preservation. Local relay identity diagnostics use
 `runSwitchboardRelayWhoami(argv)`. Relay log inspection uses
 `runSwitchboardRelayLogs(argv)` for encrypted read-only log sink reads. Live
 relay verification uses `runSwitchboardRelayVerify(argv)` for read-only local
@@ -118,13 +119,7 @@ explicit `--pin` local Acurast spec updates. Read-only relay DNS diagnostics
 use `runSwitchboardRelayDnsPlan(argv)` and
 `runSwitchboardRelayDnsVerify(argv)` while preserving spec resolution, public
 CNAME checks, resolver overrides, no-DNS no-op behavior, and no Cloudflare
-credential requirement. Relay Acurast
-deployment status uses `runSwitchboardRelayDeploymentStatus(argv)` while
-preserving explicit/local deployment-id resolution and read-only helper
-execution. Relay Acurast deployment inspection uses
-`runSwitchboardRelayInspect(argv)` while preserving explicit/local
-deployment-id resolution, `--watch`/`--events` passthrough, and read-only
-helper execution. Relay health transition watching uses
+credential requirement. Relay health transition watching uses
 `runSwitchboardRelayWatch(argv)` while preserving local relay catalog reads,
 endpoint probes, `--interval-ms`, `--max-runs`, and read-only transition
 output. Relay key generation uses `runSwitchboardRelayKeygen(argv)` while
@@ -145,3 +140,5 @@ CLI package does not export the expected runner yet, the plugin falls back to
 spawning the packaged `switchboard` binary for that command. The child-process
 fallback is transitional and should be removed after the public Switchboard CLI
 release that exposes the shared runners is the minimum supported dependency.
+Removed relay lifecycle-management commands are rejected before either
+in-process loading or child-process fallback.

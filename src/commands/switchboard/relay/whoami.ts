@@ -32,10 +32,10 @@ export default class SwitchboardRelayWhoami extends Command {
       description: "Acurast network: mainnet or canary."
     }),
     "seed-env": Flags.string({
-      description: "Environment variable containing the relay deployer mnemonic."
+      description: "Environment variable containing the Acurast signer mnemonic."
     }),
     spec: Flags.string({
-      description: "Relay deployment spec JSON file."
+      description: "Relay spec JSON file."
     }),
     "spec-file": Flags.string({
       description: "Alias for --spec."
@@ -54,7 +54,7 @@ export default class SwitchboardRelayWhoami extends Command {
     })
   };
   static strict = false;
-  static summary = "Show relay deployer identity.";
+  static summary = "Show relay Acurast identity.";
 
   async run(): Promise<void> {
     this.parsed = true;
@@ -126,8 +126,8 @@ USAGE
 FLAGS
   --json                  Print machine-readable relay identity output.
   --network <name>        Acurast network: mainnet or canary.
-  --seed-env <name>       Environment variable containing the relay deployer mnemonic.
-  --spec <path>           Relay deployment spec JSON file.
+  --seed-env <name>       Environment variable containing the Acurast signer mnemonic.
+  --spec <path>           Relay spec JSON file.
   --spec-file <path>      Alias for --spec.
   --ops-profile <name>    Switchboard ops profile for admin defaults.
   --profile <name>        Alias for --ops-profile.
@@ -135,7 +135,7 @@ FLAGS
   --context <name>        Switchboard context name for runtime defaults.
 
 DESCRIPTION
-  Resolves the relay deployer seed from --seed-env, a relay deployment spec,
+  Resolves the Acurast signer seed from --seed-env, a relay spec,
   or the default Acurast seed env vars, then derives the generic and Polkadot
   ss58 addresses and compares them with any configured Acurast address env.
   The command reads local env/spec data only; it does not probe relays, deploy

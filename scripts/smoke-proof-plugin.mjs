@@ -163,12 +163,6 @@ try {
   assertIncludes(relayPickProcessorHelp.stdout, "--json");
   assertExcludes(relayPickProcessorHelp.stdout, "Switchboard, a PROOF project");
 
-  const relayDeploymentsHelp = run(process.execPath, [proofDevBin, "switchboard", "relay", "deployments", "--help"], { cwd: proofCliRoot, env });
-  assertIncludes(relayDeploymentsHelp.stdout, "Show Switchboard relay deployment history");
-  assertIncludes(relayDeploymentsHelp.stdout, "<relay-id>");
-  assertIncludes(relayDeploymentsHelp.stdout, "--json");
-  assertExcludes(relayDeploymentsHelp.stdout, "Switchboard, a PROOF project");
-
   const relayLogsHelp = run(process.execPath, [proofDevBin, "switchboard", "relay", "logs", "--help"], { cwd: proofCliRoot, env });
   assertIncludes(relayLogsHelp.stdout, "Read encrypted Switchboard relay log events");
   assertIncludes(relayLogsHelp.stdout, "--read-url");
@@ -220,22 +214,6 @@ try {
   assertExcludes(relayCatalogSetStateHelp.stdout, "--yes");
   assertExcludes(relayCatalogSetStateHelp.stdout, "--signing-key");
   assertExcludes(relayCatalogSetStateHelp.stdout, "Switchboard, a PROOF project");
-
-  const relayDeploymentStatusHelp = run(process.execPath, [proofDevBin, "switchboard", "relay", "deployment-status", "--help"], { cwd: proofCliRoot, env });
-  assertIncludes(relayDeploymentStatusHelp.stdout, "Read Acurast deployment status for a Switchboard relay");
-  assertIncludes(relayDeploymentStatusHelp.stdout, "--deployment-id");
-  assertIncludes(relayDeploymentStatusHelp.stdout, "--spec-file");
-  assertExcludes(relayDeploymentStatusHelp.stdout, "--json");
-  assertExcludes(relayDeploymentStatusHelp.stdout, "Switchboard, a PROOF project");
-
-  const relayInspectHelp = run(process.execPath, [proofDevBin, "switchboard", "relay", "inspect", "--help"], { cwd: proofCliRoot, env });
-  assertIncludes(relayInspectHelp.stdout, "Inspect Acurast deployment details for a Switchboard relay");
-  assertIncludes(relayInspectHelp.stdout, "--deployment-id");
-  assertIncludes(relayInspectHelp.stdout, "--spec-file");
-  assertIncludes(relayInspectHelp.stdout, "--watch");
-  assertIncludes(relayInspectHelp.stdout, "--events");
-  assertExcludes(relayInspectHelp.stdout, "--json");
-  assertExcludes(relayInspectHelp.stdout, "Switchboard, a PROOF project");
 
   const relayWatchHelp = run(process.execPath, [proofDevBin, "switchboard", "relay", "watch", "--help"], { cwd: proofCliRoot, env });
   assertIncludes(relayWatchHelp.stdout, "Watch Switchboard relay health transitions");
