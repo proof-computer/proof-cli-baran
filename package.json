@@ -1,6 +1,6 @@
 {
   "name": "@proof-computer/proof-cli-switchboard",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Switchboard plugin for the PROOF command line interface.",
   "private": false,
   "type": "module",
@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@oclif/core": "^4.11.3",
-    "@proof-computer/switchboard-cli": "0.2.0"
+    "@proof-computer/switchboard-cli": "0.2.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

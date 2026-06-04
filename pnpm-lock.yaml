@@ -12,8 +12,8 @@ importers:
         specifier: ^4.11.3
         version: 4.11.3
       '@proof-computer/switchboard-cli':
-        specifier: 0.1.22
-        version: 0.1.22(@ledgerhq/hw-transport-node-hid-singleton@6.31.5)(@polkadot/api-augment@16.5.6)(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))(@zondax/ledger-substrate@1.1.1)
+        specifier: 0.2.1
+        version: 0.2.1(@ledgerhq/hw-transport-node-hid-singleton@6.31.5)(@polkadot/api-augment@16.5.6)(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))(@zondax/ledger-substrate@1.1.1)
     devDependencies:
       '@types/node':
         specifier: ^24.10.1
@@ -767,8 +767,8 @@ packages:
     resolution: {integrity: sha512-tOPdkMye3iuXnuFtdNg5+iSu7Cz9LRL8z5psMuZpUpThMYChGsS2pDFtNvXOKU8ohhO+frY9VdJ9VBg1WL9Iug==}
     engines: {node: '>=18'}
 
-  '@proof-computer/switchboard-cli@0.1.22':
-    resolution: {integrity: sha512-nVx0xZS4ndU9j49quDRhTXrxrLJAsET4Bag01wc+yIEJg8pF4yCC7pPaoU51uTEwBssW6dS7/DL4MnLFjykuIA==}
+  '@proof-computer/switchboard-cli@0.2.1':
+    resolution: {integrity: sha512-osPot1PN5LKzLyY9YcGRKcSWcQQBLfwpS6duWmsX9YoTMOwuwqwLY8/C+MLfYgmbYQI9Dr9tSvfcNsxa00vI8w==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -3144,7 +3144,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@proof-computer/switchboard-cli@0.1.22(@ledgerhq/hw-transport-node-hid-singleton@6.31.5)(@polkadot/api-augment@16.5.6)(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))(@zondax/ledger-substrate@1.1.1)':
+  '@proof-computer/switchboard-cli@0.2.1(@ledgerhq/hw-transport-node-hid-singleton@6.31.5)(@polkadot/api-augment@16.5.6)(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))(@zondax/ledger-substrate@1.1.1)':
     dependencies:
       '@acurast/sdk': 1.2.0(@polkadot/api-augment@16.5.6)(@polkadot/api@16.5.6)(@polkadot/keyring@14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3))(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))
       '@clack/prompts': 1.4.0
