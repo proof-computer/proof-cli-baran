@@ -1862,7 +1862,7 @@ test("emits native launch-demo progress from proof runner events", async () => {
       options?.progress?.({ type: "line", section: "Demo project", status: "wait", label: "Dependencies", detail: "installing demo package" });
       options?.progress?.({ type: "line", section: "Demo project", status: "warn", label: "npm", detail: "deprecated package" });
       options?.progress?.({ type: "line", section: "Demo project", status: "ok", label: "Dependencies", detail: "installed added 24 packages in 2s" });
-      options?.progress?.({ type: "line", section: "Switchboard demo", label: "Demo package", detail: "github:proof-computer/switchboard-express-demo#v0.2.0" });
+      options?.progress?.({ type: "line", section: "Switchboard demo", label: "Demo package", detail: "0.2.0" });
       options?.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
       options?.progress?.({ type: "workflow", event: "capacity_selected", details: { processor: "5GrwvaEF5zXb26Fz9rcQpDWSXg7yFRqXBnhJUjqbkNbA" } });
       options?.progress?.({ type: "workflow", event: "intent_created", details: { intentId: "di_demo" } });
