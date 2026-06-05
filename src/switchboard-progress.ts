@@ -376,6 +376,13 @@ function workflowProgressLine(
     case "dns_propagated":
     case "group_dns_propagated":
       return { status: "ok", label: "DNS propagated", detail: dnsProgressDetail(record), section: section ?? "Switchboard Runner" };
+    case "admission_requested":
+    case "gateway_upstream_admission_requested":
+      return { status: "wait", label: "Gateway admission requested", detail: stringRecordField(record, "requestDigest") ? `request=${compactId(stringRecordField(record, "requestDigest"))}` : undefined, section: section ?? "Switchboard Runner" };
+    case "gateway_probe_pending":
+      return { status: "wait", label: "Gateway probe pending", detail: stringRecordField(record, "gatewayId"), section: section ?? "Switchboard Runner" };
+    case "gateway_upstream_admitted":
+      return { status: "ok", label: "Gateway upstream admitted", detail: stringRecordField(record, "admissionId") ? `admission=${compactId(stringRecordField(record, "admissionId"))}` : undefined, section: section ?? "Switchboard Runner" };
     case "route_active":
     case "group_route_active":
       return { status: "ok", label: "Activated route", detail: routeProgressDetail(record), section: section ?? "Switchboard Runner" };

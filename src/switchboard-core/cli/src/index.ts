@@ -1645,6 +1645,16 @@ def discover_upstream_ips(config, bridge):
     return values
 
 
+def candidate_upstream_ips(config):
+    values = []
+    for candidate in split_csv(config.get("SWITCHBOARD_UPSTREAM_CANDIDATE_IPS") or os.environ.get("SWITCHBOARD_UPSTREAM_CANDIDATE_IPS")):
+        append_upstream_ip(values, candidate)
+    for candidate in local_interface_ips(config):
+        append_upstream_ip(values, candidate)
+    log("upstream-admission-candidate-ips-discovered", count=len(values), candidateUpstreamIps=values)
+    return values
+
+
 def intent_endpoint(config, suffix):
     relay_url = require_https_url(required(config, "SWITCHBOARD_RELAY_URL"), "SWITCHBOARD_RELAY_URL").rstrip("/")
     intent_id = urllib.parse.quote(required(config, "SWITCHBOARD_INTENT_ID"), safe="")
@@ -1718,6 +1728,7 @@ def apply_runtime_config(config, runtime):
         "processorId": "PROCESSOR_ID",
         "gatewayId": "GATEWAY_ID",
         "gatewayUpstreamAdmissionUrl": "GATEWAY_UPSTREAM_ADMISSION_URL",
+        "gatewayUpstreamAdmissionMode": "GATEWAY_UPSTREAM_ADMISSION_MODE",
         "endpointHostname": "ENDPOINT_HOSTNAME",
     }
     for source, target in mapping.items():
@@ -1865,11 +1876,23 @@ def gateway_upstream_port(config):
 
 
 def admit_gateway_upstream(config, bridge):
+    mode = config.get("GATEWAY_UPSTREAM_ADMISSION_MODE") or config.get("SWITCHBOARD_GATEWAY_UPSTREAM_ADMISSION_MODE") or "direct-post"
+    if mode not in ("direct-post", "relay-pull"):
+        fail(f"unsupported GATEWAY_UPSTREAM_ADMISSION_MODE: {mode}")
     admission_url = config.get("GATEWAY_UPSTREAM_ADMISSION_URL")
-    if not admission_url:
+    if mode == "direct-post" and not admission_url:
         return None
-    admission_url = require_gateway_admission_url(admission_url, "GATEWAY_UPSTREAM_ADMISSION_URL")
-    maybe_whitelist_url(bridge, admission_url)
+    if admission_url:
+        admission_url = require_gateway_admission_url(admission_url, "GATEWAY_UPSTREAM_ADMISSION_URL")
+        maybe_whitelist_url(bridge, admission_url)
+    post_health(config, "registered", {
+        "stage": "admission_requested" if mode == "relay-pull" else "gateway_upstream_admitting",
+        "gatewayUpstreamAdmissionMode": mode,
+        "sessionId": config.get("SESSION_ID"),
+        "endpointHostname": config.get("ENDPOINT_HOSTNAME"),
+        "gatewayId": config.get("GATEWAY_ID"),
+        "upstreamPort": gateway_upstream_port(config),
+    })
     token = required(config, "SWITCHBOARD_INTENT_TOKEN")
     status, challenge = request_json(
         "POST",
@@ -1885,6 +1908,24 @@ def admit_gateway_upstream(config, bridge):
     if not request or not digest:
         fail("gateway upstream admission challenge response was missing request or digest")
     signature = bridge.sign_digest(digest)
+    if mode == "relay-pull":
+        candidates = candidate_upstream_ips(config)
+        status, relay_body = request_json(
+            "POST",
+            intent_endpoint(config, "/upstream-admission-requests"),
+            {
+                "request": request,
+                "requestSignature": signature,
+                "candidateUpstreamIps": candidates,
+            },
+            token=token,
+            timeout=int(config.get("SWITCHBOARD_INTENT_REQUEST_TIMEOUT_MS", "60000")) / 1000,
+        )
+        if status < 200 or status >= 300:
+            fail(f"relay gateway upstream admission request failed: {status} {relay_body}")
+        log("gateway-upstream-admission-requested", requestDigest=digest, candidateUpstreamIps=candidates)
+        return {"mode": "relay-pull", "requestDigest": digest, "candidateUpstreamIps": relay_body.get("candidateUpstreamIps") or candidates}
+
     status, gateway_body = request_json(
         "POST",
         admission_url,
@@ -1909,6 +1950,7 @@ def admit_gateway_upstream(config, bridge):
         fail(f"relay gateway upstream admission submit failed: {status} {relay_body}")
     admission = relay_body.get("admission") or {}
     log("gateway-upstream-admitted", admissionId=admission.get("admissionId"), observedAt=admission.get("observedAt"))
+    admission["mode"] = "direct-post"
     return admission
 
 
