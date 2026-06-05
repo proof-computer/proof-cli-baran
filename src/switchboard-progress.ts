@@ -61,7 +61,10 @@ export function createSwitchboardDeployProgressReporter(input: {
     completed: false,
     currentSection: "Switchboard Runner" as SwitchboardProgressSection,
     lastWaitAt: new Map<string, number>(),
-    preparedJobLines: new Set<string>()
+    preparedJobLines: new Set<string>(),
+    acurastEnvironmentSet: false,
+    acurastSchedule: undefined as Record<string, unknown> | undefined,
+    pendingJobStartWait: undefined as SwitchboardProgressEvent | undefined
   };
   const env = input.env ?? process.env;
   const waitIntervalMs = positiveInteger(
@@ -76,24 +79,17 @@ export function createSwitchboardDeployProgressReporter(input: {
 
   return {
     progress(event) {
-      const line = progressEventLine(event);
-      if (!line) return;
-      if (line.label === "Acurast SDK prepared job") {
-        const key = `${line.label}:${line.detail ?? ""}`;
-        if (state.preparedJobLines.has(key)) return;
-        state.preparedJobLines.add(key);
+      updateProgressState(event, state);
+      if (isJobStartWait(event) && !state.acurastEnvironmentSet) {
+        state.pendingJobStartWait = event;
+        return;
       }
-      if (line.status === "wait") {
-        const key = `${line.label}:${line.detail ?? ""}`;
-        const now = Date.now();
-        const last = state.lastWaitAt.get(key) ?? 0;
-        if (last !== 0 && now - last < waitIntervalMs) return;
-        state.lastWaitAt.set(key, now);
+      logProgressEvent(event, state, waitIntervalMs);
+      if (isAcurastEnvironmentSet(event) && state.pendingJobStartWait) {
+        const pending = state.pendingJobStartWait;
+        state.pendingJobStartWait = undefined;
+        logProgressEvent(pending, state, waitIntervalMs);
       }
-      if (event.type === "workflow" && event.event === "final_report") {
-        state.completed = true;
-      }
-      logProgressLine(line, state);
     },
     complete() {
       if (!state.completed) {
@@ -106,6 +102,71 @@ export function createSwitchboardDeployProgressReporter(input: {
       logProgressLine({ status: "error", label: "Deployment workflow failed", detail: message, section: "Switchboard Runner" }, state);
     }
   };
+}
+
+function updateProgressState(
+  event: SwitchboardProgressEvent,
+  state: {
+    acurastEnvironmentSet: boolean;
+    acurastSchedule?: Record<string, unknown>;
+  }
+): void {
+  if (isAcurastEnvironmentSet(event)) {
+    state.acurastEnvironmentSet = true;
+  }
+  if (event.type === "acurast-sdk" && event.sdkStatus === "Prepared") {
+    const schedule = acurastSdkSchedule(event.data);
+    if (schedule) state.acurastSchedule = schedule;
+  }
+}
+
+function logProgressEvent(
+  event: SwitchboardProgressEvent,
+  state: {
+    completed: boolean;
+    currentSection: SwitchboardProgressSection;
+    lastWaitAt: Map<string, number>;
+    preparedJobLines: Set<string>;
+    acurastSchedule?: Record<string, unknown>;
+  },
+  waitIntervalMs: number
+): void {
+  const line = progressEventLine(withProgressState(event, state));
+  if (!line) return;
+  if (line.label === "Acurast SDK prepared job") {
+    const key = `${line.label}:${line.detail ?? ""}`;
+    if (state.preparedJobLines.has(key)) return;
+    state.preparedJobLines.add(key);
+  }
+  if (line.status === "wait") {
+    const key = `${line.label}:${line.detail ?? ""}`;
+    const now = Date.now();
+    const last = state.lastWaitAt.get(key) ?? 0;
+    if (last !== 0 && now - last < waitIntervalMs) return;
+    state.lastWaitAt.set(key, now);
+  }
+  if (event.type === "workflow" && event.event === "final_report") {
+    state.completed = true;
+  }
+  logProgressLine(line, state);
+}
+
+function withProgressState(
+  event: SwitchboardProgressEvent,
+  state: { acurastSchedule?: Record<string, unknown> }
+): SwitchboardProgressEvent {
+  if (!isJobStartWait(event) || event.schedule || !state.acurastSchedule) {
+    return event;
+  }
+  return { ...event, schedule: state.acurastSchedule };
+}
+
+function isJobStartWait(event: SwitchboardProgressEvent): boolean {
+  return event.type === "wait" && (event.step ?? event.event) === "deploy_submitted";
+}
+
+function isAcurastEnvironmentSet(event: SwitchboardProgressEvent): boolean {
+  return event.type === "acurast-sdk" && event.sdkStatus === "EnvironmentVariablesSet";
 }
 
 function printInitialContext(
@@ -191,7 +252,7 @@ function progressEventLine(event: SwitchboardProgressEvent): ProgressLine | unde
   }
 
   if (event.type === "wait") {
-    return waitProgressLine(event.step ?? event.event, event.detail, event.section);
+    return waitProgressLine(event.step ?? event.event, event.detail, event.section, event.schedule);
   }
 
   if (event.type === "report") {
@@ -236,6 +297,14 @@ function acurastSdkProgressLine(status: string, data: unknown): ProgressLine {
     default:
       return { status: "info", label: `Acurast SDK ${status}` };
   }
+}
+
+function acurastSdkSchedule(data: unknown): Record<string, unknown> | undefined {
+  const record = recordValue(data);
+  const schedule = recordValue(record.schedule);
+  if (Object.keys(schedule).length > 0) return schedule;
+  const jobSchedule = recordValue(recordValue(record.job).schedule);
+  return Object.keys(jobSchedule).length > 0 ? jobSchedule : undefined;
 }
 
 function workflowProgressLine(
@@ -310,6 +379,17 @@ function workflowProgressLine(
     case "route_active":
     case "group_route_active":
       return { status: "ok", label: "Activated route", detail: routeProgressDetail(record), section: section ?? "Switchboard Runner" };
+    case "route_not_ready":
+      return {
+        status: "wait",
+        label: "Waiting for route readiness",
+        detail: [
+          stringRecordField(record, "reason"),
+          stringRecordField(record, "healthState") ? `health=${stringRecordField(record, "healthState")}` : undefined,
+          stringRecordField(record, "healthStage") ? `stage=${stringRecordField(record, "healthStage")}` : undefined
+        ].filter(Boolean).join(" ") || undefined,
+        section: section ?? "Switchboard Runner"
+      };
     case "registration_observed":
     case "group_registration_observed":
       return { status: "ok", label: "Registered on Hub", detail: registrationProgressDetail(record), section: section ?? "Switchboard Runner" };
@@ -328,13 +408,14 @@ function workflowProgressLine(
 function waitProgressLine(
   step: string | undefined,
   detail: string | undefined,
-  section?: SwitchboardProgressSection
+  section?: SwitchboardProgressSection,
+  schedule?: Record<string, unknown>
 ): ProgressLine | undefined {
   switch (step) {
     case "capacity_selection":
-      return { status: "wait", label: "Capacity selection", detail: detail ?? "checking operator capacity", section: section ?? "Switchboard Runner" };
+      return undefined;
     case "deploy_submitted":
-      return { status: "wait", label: "Runtime claim", detail: detail ?? "waiting for job runtime to claim the deployment intent", section: section ?? "Switchboard Runner" };
+      return { status: "wait", label: "Job start", detail: jobStartWaitDetail(schedule), section: section ?? "Switchboard Runner" };
     case "runtime_claimed":
       return { status: "wait", label: "Quote", detail: detail ?? "waiting for ingress quote", section: section ?? "Switchboard Runner" };
     case "quote_ready":
@@ -352,6 +433,21 @@ function waitProgressLine(
     default:
       return undefined;
   }
+}
+
+function jobStartWaitDetail(schedule: Record<string, unknown> | undefined): string {
+  const summary = deployScheduleSummary(recordValue(schedule), {});
+  const now = Date.now();
+  if (summary?.startMs !== undefined && now < summary.startMs) {
+    return `waiting for job to start in ${formatProgressDuration(summary.startMs - now)}`;
+  }
+  if (summary?.latestStartMs !== undefined && now > summary.latestStartMs) {
+    return "past max-start; waiting for job to start";
+  }
+  if (summary?.latestStartMs !== undefined) {
+    return `waiting for job to start; max-start in ${formatProgressDuration(summary.latestStartMs - now)}`;
+  }
+  return "waiting for job to start";
 }
 
 function logProgressLine(
@@ -420,7 +516,7 @@ function validationProgressDetail(details: Record<string, unknown>): string | un
 function deployScheduleSummary(
   explicitSchedule: Record<string, unknown>,
   jobSchedule: Record<string, unknown>
-): { startIso?: string; endIso?: string; latestStartIso?: string } | undefined {
+): { startMs?: number; endMs?: number; latestStartMs?: number; startIso?: string; endIso?: string; latestStartIso?: string } | undefined {
   const schedule = Object.keys(explicitSchedule).length > 0 ? explicitSchedule : jobSchedule;
   if (Object.keys(schedule).length === 0) return undefined;
   const startUnixSeconds = unixSecondsField(schedule, "startUnixSeconds");
@@ -438,10 +534,27 @@ function deployScheduleSummary(
     ? startMs + maxStartDelayMs
     : undefined;
   return {
+    startMs,
+    endMs,
+    latestStartMs,
     startIso: stringRecordField(schedule, "startIso") ?? (startMs !== undefined ? new Date(startMs).toISOString() : undefined),
     endIso: stringRecordField(schedule, "endIso") ?? (endMs !== undefined ? new Date(endMs).toISOString() : undefined),
     latestStartIso: stringRecordField(schedule, "latestStartIso") ?? (latestStartMs !== undefined ? new Date(latestStartMs).toISOString() : undefined)
   };
+}
+
+function formatProgressDuration(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}h${minutes > 0 ? ` ${minutes}m` : ""}${seconds > 0 ? ` ${seconds}s` : ""}`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m${seconds > 0 ? ` ${seconds}s` : ""}`;
+  }
+  return `${seconds}s`;
 }
 
 function normalizeScheduleTimestampMs(value: unknown): number | undefined {

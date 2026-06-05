@@ -2488,7 +2488,6 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
     optionalEnv("ACURAST_MAX_COST_PER_EXECUTION") ??
     DEFAULT_LAUNCH_DEMO_MAX_COST_PER_EXECUTION;
   const privateAcurastEnv = acurastCliCredentialEnv(runtime, acurastNetwork);
-  runtime.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
   const selection = await selectLaunchDemoCapacity({
     relayUrl,
     relayUrls,
@@ -4594,7 +4593,7 @@ function deployWorkflowFundingHelperEnv(
   const capacity = snapshot.data.capacity && typeof snapshot.data.capacity === "object"
     ? snapshot.data.capacity as Record<string, unknown>
     : {};
-  const runtimeSigner = stringRecordField(runtime, "runtimeSigner") ?? stringRecordField(snapshot.data.runtime, "runtimeSigner");
+  const runtimeSigner = deployWorkflowRuntimeSigner(runtime, snapshot);
   return {
     ...helperEnv,
     SWITCHBOARD_TARGET: input.target.name,
@@ -4618,6 +4617,28 @@ function deployWorkflowFundingHelperEnv(
     PAID_SECONDS: String(input.durationSeconds),
     SWITCHBOARD_QUOTE_CAP_AMOUNT: input.quoteCapAmount
   };
+}
+
+function deployWorkflowRuntimeSigner(
+  runtime: Record<string, unknown> | undefined,
+  snapshot: SwitchboardDeployWorkflowSnapshot
+): string | undefined {
+  return (
+    stringRecordField(runtime, "runtimeSigner") ??
+    stringRecordField(snapshot.data.runtime, "runtimeSigner") ??
+    stringRecordField(snapshot.data.intentStatus, "runtimeSigner") ??
+    runtimeSignerFromWorkflowEvents(snapshot.events)
+  );
+}
+
+function runtimeSignerFromWorkflowEvents(events: readonly SwitchboardDeployWorkflowEvent[] = []): string | undefined {
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (event?.type !== "runtime_claimed") continue;
+    const runtimeSigner = stringRecordField(event.details, "runtimeSigner");
+    if (runtimeSigner) return runtimeSigner;
+  }
+  return undefined;
 }
 
 async function resolveHubFundingHelper(): Promise<{ command: string; args: string[]; cwd?: string }> {
@@ -6336,6 +6357,8 @@ function normalizedDeployWorkflowPhase(snapshot: SwitchboardDeployWorkflowSnapsh
       return "funding submitted";
     case "dns_propagated":
       return "dns propagated";
+    case "route_not_ready":
+      return "route not ready";
     case "route_active":
       return "route active";
     case "registration_observed":
@@ -7315,7 +7338,11 @@ async function runDeployWorkflowToTerminalOrBlockedWithPolling(input: {
       throw new Error(`Timed out waiting for deploy workflow to advance from ${snapshot.step} after ${input.timeoutMs}ms`);
     }
     const before = snapshot.step;
-    input.progress?.({ type: "wait", step: before });
+    input.progress?.({
+      type: "wait",
+      step: before,
+      schedule: before === "deploy_submitted" ? deployWorkflowRuntimeWaitSchedule(snapshot) : undefined
+    });
     snapshot = await input.workflow.advanceOnce();
     emittedEventCount = emitWorkflowSnapshotProgress(input.progress, snapshot, emittedEventCount);
     if (snapshot.step === before) {
@@ -7323,6 +7350,11 @@ async function runDeployWorkflowToTerminalOrBlockedWithPolling(input: {
     }
   }
   return snapshot;
+}
+
+function deployWorkflowRuntimeWaitSchedule(snapshot: SwitchboardDeployWorkflowSnapshot): Record<string, unknown> | undefined {
+  const schedule = recordValue(recordValue(snapshot.data.deployment).schedule);
+  return Object.keys(schedule).length > 0 ? schedule : undefined;
 }
 
 function emitRunContextProgress(runtime: CliRuntime, workflowId: string | undefined, relayUrl: string | undefined): void {
@@ -7688,7 +7720,6 @@ async function deployCommand(flags: Map<string, string | boolean>, runtime: CliR
   const routeActivationMode = "relay-reconciled";
   let selection: LaunchDemoCapacitySelection | undefined;
   if (routeActivationMode === "relay-reconciled" && (explicitOperatorId || explicitGatewayId || explicitProcessor)) {
-    runtime.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
     selection = await selectDeployCapacity({
       relayUrl,
       relayUrls,
@@ -7699,7 +7730,6 @@ async function deployCommand(flags: Map<string, string | boolean>, runtime: CliR
       requiredModules: requiredAcurastModules
     });
   } else if (!explicitOperatorId) {
-    runtime.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
     selection = await selectLaunchDemoCapacity({
         relayUrl,
         relayUrls,
@@ -10785,7 +10815,7 @@ async function runCliChild(
       options.transcriptWriter?.flush();
       const exitCode = code ?? 1;
       if (exitCode !== 0 && !options.allowFailure) {
-        const error = new Error(`${command} ${args.join(" ")} failed with ${exitCode}`) as Error & {
+        const error = new Error(`${command} ${redactCliArgs(args).join(" ")} failed with ${exitCode}`) as Error & {
           stdout?: string;
           stderr?: string;
           exitCode?: number;
@@ -10799,6 +10829,52 @@ async function runCliChild(
       resolve({ stdout, stderr, exitCode });
     });
   });
+}
+
+const SENSITIVE_CLI_ARG_NAMES = new Set([
+  "cli-token",
+  "intent-token",
+  "jwt",
+  "password",
+  "polkadot-seed",
+  "private-key",
+  "route-intent-token",
+  "secret",
+  "seed",
+  "token"
+]);
+
+function redactCliArgs(args: readonly string[]): string[] {
+  const redacted: string[] = [];
+  let redactNext = false;
+  for (const arg of args) {
+    if (redactNext) {
+      redacted.push("[redacted]");
+      redactNext = false;
+      continue;
+    }
+    const flagMatch = arg.match(/^--([^=]+)(?:=(.*))?$/u);
+    if (!flagMatch) {
+      redacted.push(arg);
+      continue;
+    }
+    const normalized = flagMatch[1].toLowerCase();
+    if (!isSensitiveCliArgName(normalized)) {
+      redacted.push(arg);
+      continue;
+    }
+    if (arg.includes("=")) {
+      redacted.push(`--${flagMatch[1]}=[redacted]`);
+    } else {
+      redacted.push(arg);
+      redactNext = true;
+    }
+  }
+  return redacted;
+}
+
+function isSensitiveCliArgName(name: string): boolean {
+  return SENSITIVE_CLI_ARG_NAMES.has(name) || name.endsWith("-token") || name.endsWith("-seed") || name.endsWith("-private-key");
 }
 
 async function runDeployRunner(
