@@ -40,6 +40,14 @@ jobs:
           cache: pnpm
           cache-dependency-path: proof-cli-switchboard/pnpm-lock.yaml
           registry-url: https://registry.npmjs.org
+      - run: npm ci
+        working-directory: switchboard-runtime-js
+      - run: npm run build
+        working-directory: switchboard-runtime-js
+      - run: npm ci
+        working-directory: switchboard-workflows-js
+      - run: npm run build
+        working-directory: switchboard-workflows-js
       - run: pnpm install --frozen-lockfile
         working-directory: proof-cli-switchboard
       - run: pnpm typecheck
@@ -87,4 +95,3 @@ jobs:
           fi
           npm publish --provenance --access public
         working-directory: proof-cli-switchboard
-

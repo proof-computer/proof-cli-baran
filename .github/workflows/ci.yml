@@ -11,6 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: proof-cli-switchboard
+      - uses: actions/checkout@v4
+        with:
+          repository: proof-computer/switchboard-runtime-js
+          path: switchboard-runtime-js
+      - uses: actions/checkout@v4
+        with:
+          repository: proof-computer/switchboard-workflows-js
+          path: switchboard-workflows-js
       - uses: pnpm/action-setup@v4
         with:
           version: 10.33.0
@@ -18,9 +28,24 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: proof-cli-switchboard/pnpm-lock.yaml
+      - run: npm ci
+        working-directory: switchboard-runtime-js
+      - run: npm run build
+        working-directory: switchboard-runtime-js
+      - run: npm ci
+        working-directory: switchboard-workflows-js
+      - run: npm run build
+        working-directory: switchboard-workflows-js
       - run: pnpm install --frozen-lockfile
+        working-directory: proof-cli-switchboard
       - run: pnpm typecheck
+        working-directory: proof-cli-switchboard
       - run: pnpm test
+        working-directory: proof-cli-switchboard
       - run: pnpm build
+        working-directory: proof-cli-switchboard
       - run: node scripts/verify-package.mjs
+        working-directory: proof-cli-switchboard
       - run: pnpm pack:dry-run
+        working-directory: proof-cli-switchboard
