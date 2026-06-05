@@ -1,6 +1,6 @@
 {
   "name": "@proof-computer/proof-cli-switchboard",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Switchboard plugin for the PROOF command line interface.",
   "private": false,
   "type": "module",
