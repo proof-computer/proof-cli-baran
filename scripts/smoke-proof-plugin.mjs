@@ -25,8 +25,9 @@ try {
   assertIncludes(plugins.stdout, "@proof-computer/proof-cli-switchboard");
 
   const help = run(process.execPath, [proofDevBin, "switchboard", "--help"], { cwd: proofCliRoot, env });
-  assertIncludes(help.stdout, "Switchboard, a PROOF project");
-  assertIncludes(help.stdout, "switchboard launch-demo --yes-spend");
+  assertIncludes(help.stdout, "Switchboard ingress commands.");
+  assertIncludes(help.stdout, "compatibility bridge has been removed");
+  assertExcludes(help.stdout, "switchboard launch-demo --yes-spend");
 
   const deployHelp = run(process.execPath, [proofDevBin, "switchboard", "deploy", "--help"], { cwd: proofCliRoot, env });
   assertIncludes(deployHelp.stdout, "Deploy a project workload through Switchboard");
