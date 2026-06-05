@@ -157,9 +157,9 @@ const DEFAULT_LAUNCH_DEMO_SCHEDULE_BUFFER_MINUTES = 0;
 const DEFAULT_LAUNCH_DEMO_START_DELAY_MS = 180_000;
 const DEFAULT_LAUNCH_DEMO_MAX_COST_PER_EXECUTION = "40000000000";
 const DEFAULT_LAUNCH_DEMO_PROCESSOR_MAX_AGE_SECONDS = 900;
-const DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC = "github:proof-computer/switchboard-express-demo#v0.2.1";
-const MIN_LAUNCH_DEMO_RUNTIME_VERSION = "0.2.1";
-const MIN_LAUNCH_DEMO_RUNTIME_PACKAGE_VERSION = "0.1.2";
+const DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC = "github:proof-computer/switchboard-express-demo#v0.2.3";
+const MIN_LAUNCH_DEMO_RUNTIME_VERSION = "0.2.3";
+const MIN_LAUNCH_DEMO_RUNTIME_PACKAGE_VERSION = "0.1.3";
 const LAUNCH_DEMO_ENTRYPOINT = "src/server.ts";
 const SSH_TEMPLATE_NAME = "ssh";
 const SSH_TEMPLATE_DISTRO = "ubuntu";
@@ -1875,6 +1875,17 @@ def gateway_upstream_port(config):
     return int(config.get("GATEWAY_UPSTREAM_PORT") or config.get("SWITCHBOARD_UPSTREAM_PORT") or os.environ.get("PORT", "3000"))
 
 
+def gateway_upstream_admission_deadline_seconds(config):
+    raw = config.get("GATEWAY_UPSTREAM_ADMISSION_DEADLINE_SECONDS") or config.get("GW_ADMISSION_DEADLINE_SECONDS") or "7200"
+    try:
+        value = int(raw)
+    except ValueError:
+        return 7200
+    if value <= 0:
+        return 7200
+    return min(value, 86400)
+
+
 def admit_gateway_upstream(config, bridge):
     mode = config.get("GATEWAY_UPSTREAM_ADMISSION_MODE") or config.get("SWITCHBOARD_GATEWAY_UPSTREAM_ADMISSION_MODE") or "direct-post"
     if mode not in ("direct-post", "relay-pull"):
@@ -1897,7 +1908,10 @@ def admit_gateway_upstream(config, bridge):
     status, challenge = request_json(
         "POST",
         intent_endpoint(config, "/runtime-signing/upstream-admission-challenge"),
-        {"upstreamPort": gateway_upstream_port(config)},
+        {
+            "upstreamPort": gateway_upstream_port(config),
+            "deadlineSeconds": gateway_upstream_admission_deadline_seconds(config),
+        },
         token=token,
         timeout=int(config.get("SWITCHBOARD_INTENT_REQUEST_TIMEOUT_MS", "60000")) / 1000,
     )
@@ -2656,6 +2670,7 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
     manifestConfig,
     flags,
     durationMinutes,
+    scheduleBufferMinutes,
     maxCostPerExecution,
     selection,
     demoProject,
@@ -4114,6 +4129,7 @@ function launchDemoWorkflowInputFromCli(input: {
   manifestConfig: CliNetworkConfig;
   flags: Map<string, string | boolean>;
   durationMinutes: number;
+  scheduleBufferMinutes: number;
   maxCostPerExecution: string;
   selection: LaunchDemoCapacitySelection;
   demoProject: LaunchDemoProject;
@@ -4121,7 +4137,11 @@ function launchDemoWorkflowInputFromCli(input: {
   groupDeployEnabled?: boolean;
 }): SwitchboardDeployWorkflowInput {
   const target = targetFromFlags(input.flags, input.manifestConfig);
-  return launchDemoWorkflowInput({
+  const gatewayUpstreamAdmissionDeadlineSeconds = launchDemoGatewayUpstreamAdmissionDeadlineSeconds(
+    input.durationMinutes,
+    input.scheduleBufferMinutes
+  );
+  const workflowInput = launchDemoWorkflowInput({
     deploymentMode: input.groupDeployEnabled ? "group" : "single",
     relayUrl: input.relayUrl,
     allowInsecureHttp: boolFlag(input.flags, "allow-local-relay"),
@@ -4153,11 +4173,24 @@ function launchDemoWorkflowInputFromCli(input: {
       mode: "switchboard-cli-launch-demo",
       compatibilityRunner: "switchboard-deploy",
       demoPackageSpec: input.demoProject.packageSpec,
-      demoPackageVersion: input.demoProject.packageVersion
+      demoPackageVersion: input.demoProject.packageVersion,
+      runtime: {
+        kind: "switchboard-express-demo",
+        gatewayUpstreamAdmissionDeadlineSeconds
+      }
     },
     demoPackage: input.demoProject.packageSpec,
     minReady: input.minReady
   });
+  workflowInput.runtime = {
+    ...(workflowInput.runtime ?? {}),
+    gatewayUpstreamAdmissionDeadlineSeconds
+  };
+  return workflowInput;
+}
+
+function launchDemoGatewayUpstreamAdmissionDeadlineSeconds(durationMinutes: number, scheduleBufferMinutes: number): number {
+  return Math.ceil((durationMinutes + scheduleBufferMinutes) * 60 + 900);
 }
 
 function launchDemoWorkflowGroupMember(member: LaunchDemoMemberSelection): SwitchboardGroupMemberSelection {

@@ -158,6 +158,7 @@ async function main() {
     await writeFile(path.join(config.stageDir, ".env"), buildAcurastEnv(config));
     const result = await updateAcurastJobEnvWithSdk(config, deploymentId);
     console.log(result.hash ? `Acurast environment variables set: tx=${result.hash}` : "Acurast environment variables set: no env vars configured");
+    process.exit(0);
     return;
   }
   const canUseExistingStage = parsed.command === "deploy-direct" || parsed.command === "upload-script";
