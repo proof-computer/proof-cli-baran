@@ -5,6 +5,7 @@ export type SwitchboardProgressSection =
   | "Switchboard Runner"
   | "Demo project"
   | "Switchboard demo"
+  | "Switchboard deploy"
   | "Acurast deployer"
   | "Report";
 
@@ -79,6 +80,10 @@ export function createSwitchboardDeployProgressReporter(input: {
 
   return {
     progress(event) {
+      if (event.type === "section" && event.section) {
+        state.currentSection = event.section;
+        return;
+      }
       updateProgressState(event, state);
       if (isJobStartWait(event) && !state.acurastEnvironmentSet) {
         state.pendingJobStartWait = event;

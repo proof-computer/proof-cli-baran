@@ -2741,6 +2741,7 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
       estimate,
       minReadyProcessors
     });
+    runtime.progress?.({ type: "section", section: "Switchboard demo" });
   }
 
   const { report, reportPath } = groupDeployEnabled
@@ -7963,6 +7964,7 @@ async function deployCommand(flags: Map<string, string | boolean>, runtime: CliR
       routeActivationMode,
       certificateMode
     });
+    runtime.progress?.({ type: "section", section: "Switchboard deploy" });
   }
   const { report, reportPath } = await runDeployWorkflowCompatibilityRunner({
     workflow,

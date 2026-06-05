@@ -1962,6 +1962,46 @@ test("emits native launch-demo progress from proof runner events", async () => {
   assertTextOrder(captured.stdout, "Job start", "Job claimed runtime");
 });
 
+test("prints runner header after externally rendered launch-demo summary", async () => {
+  const captured = await captureConsole(async () => runSwitchboardLaunchDemoNative(["--yes-spend"], {
+    runner: async (_argv, options) => {
+      console.log("");
+      console.log("Switchboard demo");
+      console.log("Network           polkadot-hub / Acurast mainnet");
+      options?.progress?.({ type: "section", section: "Switchboard demo" });
+      options?.progress?.({ type: "workflow", event: "intent_created", details: { intentId: "di_external_demo" } });
+    }
+  }));
+
+  assert.equal(captured.result, 0);
+  assert.match(
+    captured.stdout,
+    /Switchboard demo\nNetwork\s+polkadot-hub \/ Acurast mainnet\n\nSwitchboard Runner\n  \[ok\] Deployment intent: di_external_demo/
+  );
+});
+
+test("prints runner header after externally rendered deploy summary", async () => {
+  const captured = await captureConsole(async () => runSwitchboardDeployNative([
+    "--entrypoint",
+    "src/index.ts",
+    "--yes"
+  ], {
+    runner: async (_argv, options) => {
+      console.log("");
+      console.log("Switchboard deploy");
+      console.log("Network  polkadot-hub");
+      options?.progress?.({ type: "section", section: "Switchboard deploy" });
+      options?.progress?.({ type: "workflow", event: "intent_created", details: { intentId: "di_external_deploy" } });
+    }
+  }));
+
+  assert.equal(captured.result, 0);
+  assert.match(
+    captured.stdout,
+    /Switchboard deploy\nNetwork\s+polkadot-hub\n\nSwitchboard Runner\n  \[ok\] Deployment intent: di_external_deploy/
+  );
+});
+
 test("emits HA launch-demo group progress and reports acurast-sdk submit", async () => {
   const pastSchedule = {
     startTime: Date.now() - 600_000,
