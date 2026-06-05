@@ -8,7 +8,7 @@ import {
   normalizeIngressQuote,
   rebindIngressQuoteEndpoint,
   signIngressQuote
-} from "@proofcomputer/switchboard-sdk/funding";
+} from "@proof-computer/switchboard-workflows/funding";
 import { INGRESS_REGISTRY_ABI } from "./ingress-contract.js";
 import type { ChainReader } from "./ledger-fund-ingress-session.js";
 import {

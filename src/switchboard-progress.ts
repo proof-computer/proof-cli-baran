@@ -1,7 +1,16 @@
+import { dim, sectionTitle, statusMarker } from "./switchboard-core/cli/src/output.js";
+
 export type SwitchboardProgressStatus = "info" | "ok" | "wait" | "warn" | "error";
+export type SwitchboardProgressSection =
+  | "Switchboard Runner"
+  | "Demo project"
+  | "Switchboard demo"
+  | "Acurast deployer"
+  | "Report";
 
 export interface SwitchboardProgressEvent {
   type: string;
+  section?: SwitchboardProgressSection;
   status?: SwitchboardProgressStatus;
   label?: string;
   detail?: string;
@@ -36,6 +45,7 @@ interface ProgressLine {
   status: SwitchboardProgressStatus;
   label: string;
   detail?: string;
+  section?: SwitchboardProgressSection;
 }
 
 export function createSwitchboardDeployProgressReporter(input: {
@@ -49,7 +59,9 @@ export function createSwitchboardDeployProgressReporter(input: {
 
   const state = {
     completed: false,
-    lastWaitAt: new Map<string, number>()
+    currentSection: "Switchboard Runner" as SwitchboardProgressSection,
+    lastWaitAt: new Map<string, number>(),
+    preparedJobLines: new Set<string>()
   };
   const env = input.env ?? process.env;
   const waitIntervalMs = positiveInteger(
@@ -58,14 +70,19 @@ export function createSwitchboardDeployProgressReporter(input: {
   );
 
   console.log("");
-  console.log("Deployment progress");
-  console.log("Switchboard runner");
+  console.log(sectionTitle("Deployment progress"));
+  console.log(sectionTitle("Switchboard Runner"));
   printInitialContext(input.action, input.argv, env);
 
   return {
     progress(event) {
       const line = progressEventLine(event);
       if (!line) return;
+      if (line.label === "Acurast SDK prepared job") {
+        const key = `${line.label}:${line.detail ?? ""}`;
+        if (state.preparedJobLines.has(key)) return;
+        state.preparedJobLines.add(key);
+      }
       if (line.status === "wait") {
         const key = `${line.label}:${line.detail ?? ""}`;
         const now = Date.now();
@@ -76,17 +93,17 @@ export function createSwitchboardDeployProgressReporter(input: {
       if (event.type === "workflow" && event.event === "final_report") {
         state.completed = true;
       }
-      logProgressLine(line);
+      logProgressLine(line, state);
     },
     complete() {
       if (!state.completed) {
         state.completed = true;
-        logProgressLine({ status: "ok", label: "Deployment workflow complete" });
+        logProgressLine({ status: "ok", label: "Deployment workflow complete", section: "Switchboard Runner" }, state);
       }
     },
     failed(error) {
       const message = error instanceof Error ? error.message : String(error);
-      logProgressLine({ status: "error", label: "Deployment workflow failed", detail: message });
+      logProgressLine({ status: "error", label: "Deployment workflow failed", detail: message, section: "Switchboard Runner" }, state);
     }
   };
 }
@@ -105,23 +122,7 @@ function printInitialContext(
     `action=${action}`,
     relayUrl ? `relay=${relayUrl}` : undefined
   ].filter(Boolean).join(" ");
-  logProgressLine({ status: "info", label: "Run context", detail: context || undefined });
-
-  if (action === "launch-demo" && hasFlag(argv, "--ha")) {
-    const replicas = argValue(argv, "--processor-count") ?? "3";
-    const minReady = argValue(argv, "--min-ready") ?? replicas;
-    logProgressLine({ status: "info", label: "Selected processors", detail: `ha requested replicas=${replicas} min-ready=${minReady}` });
-    logProgressLine({ status: "info", label: "Deployment intent group", detail: "pending relay allocation" });
-    return;
-  }
-
-  const processor = argValue(argv, "--processor");
-  if (processor) {
-    logProgressLine({ status: "info", label: "Selected processor", detail: compactId(processor) });
-  } else {
-    logProgressLine({ status: "wait", label: "Selected processor", detail: "waiting for capacity selection" });
-  }
-  logProgressLine({ status: "info", label: "Deployment intent", detail: "pending relay allocation" });
+  logProgressLine({ status: "info", label: "Run context", detail: context || undefined, section: "Switchboard Runner" });
 }
 
 function progressEventLine(event: SwitchboardProgressEvent): ProgressLine | undefined {
@@ -129,7 +130,8 @@ function progressEventLine(event: SwitchboardProgressEvent): ProgressLine | unde
     return {
       status: event.status ?? "info",
       label: event.label,
-      detail: event.detail
+      detail: event.detail,
+      section: event.section
     };
   }
 
@@ -138,25 +140,32 @@ function progressEventLine(event: SwitchboardProgressEvent): ProgressLine | unde
       event.workflowId ? `workflow=${event.workflowId}` : undefined,
       event.relayUrl ? `relay=${event.relayUrl}` : undefined
     ].filter(Boolean).join(" ");
-    return { status: "info", label: "Run context", detail: detail || undefined };
+    return { status: "info", label: "Run context", detail: detail || undefined, section: event.section ?? "Switchboard Runner" };
   }
 
   if (event.type === "selected-processor") {
-    return { status: "info", label: "Selected processor", detail: event.processor ? compactId(event.processor) : event.detail };
+    const detail = event.processor ? compactId(event.processor) : event.detail;
+    if (!detail) return undefined;
+    return { status: "ok", label: "Selected processor", detail, section: event.section ?? "Switchboard Runner" };
   }
 
   if (event.type === "selected-processors") {
     const processors = event.processors?.map((processor) => compactId(processor)).join(", ");
     const readiness = event.replicas ? `replicas=${event.replicas}${event.minReady ? ` min-ready=${event.minReady}` : ""}` : undefined;
+    const detail = [processors, readiness].filter(Boolean).join(" ") || event.detail;
+    if (!detail) return undefined;
     return {
-      status: "info",
+      status: "ok",
       label: "Selected processors",
-      detail: [processors, readiness].filter(Boolean).join(" ") || event.detail
+      detail,
+      section: event.section ?? "Switchboard Runner"
     };
   }
 
   if (event.type === "deployment-intent") {
-    return { status: "info", label: "Deployment intent", detail: event.intentId ?? event.detail };
+    const detail = event.intentId ?? event.detail;
+    if (!detail) return undefined;
+    return { status: "ok", label: "Deployment intent", detail, section: event.section ?? "Switchboard Runner" };
   }
 
   if (event.type === "deployment-intent-group") {
@@ -165,23 +174,28 @@ function progressEventLine(event: SwitchboardProgressEvent): ProgressLine | unde
       event.replicas ? `replicas=${event.replicas}` : undefined,
       event.minReady ? `min-ready=${event.minReady}` : undefined
     ].filter(Boolean).join(" ");
-    return { status: "info", label: "Deployment intent group", detail: detail || event.detail };
+    const resolved = detail || event.detail;
+    if (!resolved) return undefined;
+    return { status: "ok", label: "Deployment intent group", detail: resolved, section: event.section ?? "Switchboard Runner" };
   }
 
   if (event.type === "acurast-sdk") {
-    return acurastSdkProgressLine(event.sdkStatus ?? event.event ?? event.status ?? "status", event.data);
+    return withDefaultSection(
+      acurastSdkProgressLine(event.sdkStatus ?? event.event ?? event.status ?? "status", event.data),
+      event.section ?? "Acurast deployer"
+    );
   }
 
   if (event.type === "workflow") {
-    return workflowProgressLine(event.event, event.details);
+    return workflowProgressLine(event.event, event.details, event.section);
   }
 
   if (event.type === "wait") {
-    return waitProgressLine(event.step ?? event.event, event.detail);
+    return waitProgressLine(event.step ?? event.event, event.detail, event.section);
   }
 
   if (event.type === "report") {
-    return { status: "ok", label: "Wrote deployment report", detail: event.path ?? event.detail };
+    return { status: "ok", label: "Wrote deployment report", detail: event.path ?? event.detail, section: event.section ?? "Report" };
   }
 
   return undefined;
@@ -224,9 +238,46 @@ function acurastSdkProgressLine(status: string, data: unknown): ProgressLine {
   }
 }
 
-function workflowProgressLine(event: string | undefined, details: Record<string, unknown> | undefined): ProgressLine | undefined {
+function workflowProgressLine(
+  event: string | undefined,
+  details: Record<string, unknown> | undefined,
+  section?: SwitchboardProgressSection
+): ProgressLine | undefined {
   const record = recordValue(details);
   switch (event) {
+    case "capacity_selected": {
+      const processors = arrayRecordField(record, "processors")
+        .map((processor) => stringRecordField(recordValue(processor), "processor") ?? stringRecordField(recordValue(processor), "processorId"))
+        .filter((processor): processor is string => Boolean(processor));
+      const processor = stringRecordField(record, "processor") ?? stringRecordField(record, "processorId");
+      if (processors.length > 1) {
+        return {
+          status: "ok",
+          label: "Selected processors",
+          detail: processors.map((value) => compactId(value)).join(", "),
+          section: section ?? "Switchboard Runner"
+        };
+      }
+      if (!processor) return undefined;
+      return { status: "ok", label: "Selected processor", detail: compactId(processor), section: section ?? "Switchboard Runner" };
+    }
+    case "intent_created":
+      return stringRecordField(record, "intentId")
+        ? { status: "ok", label: "Deployment intent", detail: stringRecordField(record, "intentId"), section: section ?? "Switchboard Runner" }
+        : undefined;
+    case "intent_group_created":
+      return stringRecordField(record, "groupId")
+        ? {
+            status: "ok",
+            label: "Deployment intent group",
+            detail: [
+              stringRecordField(record, "groupId"),
+              numberRecordField(record, "expectedReplicas") ? `replicas=${numberRecordField(record, "expectedReplicas")}` : undefined,
+              numberRecordField(record, "minReady") ? `min-ready=${numberRecordField(record, "minReady")}` : undefined
+            ].filter(Boolean).join(" "),
+            section: section ?? "Switchboard Runner"
+          }
+        : undefined;
     case "deploy_action_submitted":
     case "group_deploy_submitted":
       return {
@@ -235,67 +286,92 @@ function workflowProgressLine(event: string | undefined, details: Record<string,
         detail: [
           stringRecordField(record, "deploymentId") ? `deployment=${stringRecordField(record, "deploymentId")}` : undefined,
           stringRecordField(record, "adapter") ? `adapter=${stringRecordField(record, "adapter")}` : undefined
-        ].filter(Boolean).join(" ") || undefined
+        ].filter(Boolean).join(" ") || undefined,
+        section: section ?? "Acurast deployer"
       };
     case "runtime_claimed":
-      return { status: "ok", label: "Job claimed runtime", detail: stringRecordField(record, "runtimeSigner") ? `signer=${compactId(stringRecordField(record, "runtimeSigner"))}` : undefined };
+      return { status: "ok", label: "Job claimed runtime", detail: stringRecordField(record, "runtimeSigner") ? `signer=${compactId(stringRecordField(record, "runtimeSigner"))}` : undefined, section: section ?? "Switchboard Runner" };
     case "group_runtime_claimed":
-      return { status: "ok", label: "Runtime claims reached min-ready", detail: memberCountDetail(record, "claimedMembers") };
+      return { status: "ok", label: "Runtime claims reached min-ready", detail: memberCountDetail(record, "claimedMembers"), section: section ?? "Switchboard Runner" };
     case "quote_ready":
     case "group_quote_ready":
-      return { status: "ok", label: "Quote ready", detail: quoteProgressDetail(record) };
+      return { status: "ok", label: "Quote ready", detail: quoteProgressDetail(record), section: section ?? "Switchboard Runner" };
     case "funding_action_required":
     case "group_member_funding_action_required":
-      return { status: "wait", label: "Funding needed", detail: "workflow is blocked on a Hub funding receipt" };
+      return { status: "wait", label: "Funding needed", detail: "workflow is blocked on a Hub funding receipt", section: section ?? "Switchboard Runner" };
     case "funding_submitted":
     case "group_funding_submitted":
     case "group_member_funding_submitted":
     case "group_member_funding_action_submitted":
-      return { status: "ok", label: "Funded Hub session", detail: fundingProgressDetail(record) };
+      return { status: "ok", label: "Funded Hub session", detail: fundingProgressDetail(record), section: section ?? "Switchboard Runner" };
     case "dns_propagated":
     case "group_dns_propagated":
-      return { status: "ok", label: "DNS propagated", detail: dnsProgressDetail(record) };
+      return { status: "ok", label: "DNS propagated", detail: dnsProgressDetail(record), section: section ?? "Switchboard Runner" };
     case "route_active":
     case "group_route_active":
-      return { status: "ok", label: "Activated route", detail: routeProgressDetail(record) };
+      return { status: "ok", label: "Activated route", detail: routeProgressDetail(record), section: section ?? "Switchboard Runner" };
     case "registration_observed":
     case "group_registration_observed":
-      return { status: "ok", label: "Registered on Hub", detail: registrationProgressDetail(record) };
+      return { status: "ok", label: "Registered on Hub", detail: registrationProgressDetail(record), section: section ?? "Switchboard Runner" };
     case "validation_observed":
     case "group_validation_observed":
-      return { status: "ok", label: "Validation observed", detail: validationProgressDetail(record) };
+      return { status: "ok", label: "Validation observed", detail: validationProgressDetail(record), section: section ?? "Switchboard Runner" };
     case "final_report":
-      return { status: "ok", label: "Deployment workflow complete" };
+      return { status: "ok", label: "Deployment workflow complete", section: section ?? "Switchboard Runner" };
     case "workflow_failed":
-      return { status: "error", label: "Deployment workflow failed", detail: stringRecordField(record, "error") };
+      return { status: "error", label: "Deployment workflow failed", detail: stringRecordField(record, "error"), section: section ?? "Switchboard Runner" };
     default:
       return undefined;
   }
 }
 
-function waitProgressLine(step: string | undefined, detail: string | undefined): ProgressLine | undefined {
+function waitProgressLine(
+  step: string | undefined,
+  detail: string | undefined,
+  section?: SwitchboardProgressSection
+): ProgressLine | undefined {
   switch (step) {
+    case "capacity_selection":
+      return { status: "wait", label: "Capacity selection", detail: detail ?? "checking operator capacity", section: section ?? "Switchboard Runner" };
     case "deploy_submitted":
-      return { status: "wait", label: "Runtime claim", detail: detail ?? "waiting for job runtime to claim the deployment intent" };
+      return { status: "wait", label: "Runtime claim", detail: detail ?? "waiting for job runtime to claim the deployment intent", section: section ?? "Switchboard Runner" };
     case "runtime_claimed":
-      return { status: "wait", label: "Quote", detail: detail ?? "waiting for ingress quote" };
+      return { status: "wait", label: "Quote", detail: detail ?? "waiting for ingress quote", section: section ?? "Switchboard Runner" };
     case "quote_ready":
-      return { status: "wait", label: "Funding", detail: detail ?? "waiting for Hub funding" };
+      return { status: "wait", label: "Funding", detail: detail ?? "waiting for Hub funding", section: section ?? "Switchboard Runner" };
     case "funding_submitted":
-      return { status: "wait", label: "Funding and DNS", detail: detail ?? "waiting for funding readback and canonical DNS" };
+      return { status: "wait", label: "Funding and DNS", detail: detail ?? "waiting for funding readback and canonical DNS", section: section ?? "Switchboard Runner" };
     case "dns_propagated":
-      return { status: "wait", label: "Route", detail: detail ?? "waiting for gateway route activation" };
+      return { status: "wait", label: "Route", detail: detail ?? "waiting for gateway route activation", section: section ?? "Switchboard Runner" };
     case "route_active":
-      return { status: "wait", label: "Registration", detail: detail ?? "waiting for Hub registration readback" };
+      return { status: "wait", label: "Registration", detail: detail ?? "waiting for Hub registration readback", section: section ?? "Switchboard Runner" };
     case "registration_observed":
-      return { status: "wait", label: "Validation", detail: detail ?? "waiting for validation report" };
+      return { status: "wait", label: "Validation", detail: detail ?? "waiting for validation report", section: section ?? "Switchboard Runner" };
+    case "relay_readback":
+      return { status: "wait", label: "Relay readback", detail, section: section ?? "Switchboard Runner" };
     default:
       return undefined;
   }
 }
 
-function logProgressLine(line: ProgressLine): void {
-  console.log(`  [${line.status}] ${line.detail ? `${line.label}: ${line.detail}` : line.label}`);
+function logProgressLine(
+  line: ProgressLine,
+  state?: { currentSection: SwitchboardProgressSection }
+): void {
+  if (state && line.section && line.section !== state.currentSection) {
+    console.log("");
+    console.log(sectionTitle(line.section));
+    state.currentSection = line.section;
+  }
+  console.log(`  ${progressStatusLine(line.status, line.label, line.detail)}`);
+}
+
+function progressStatusLine(status: SwitchboardProgressStatus, label: string, detail?: string): string {
+  return `${statusMarker(status)} ${label}${detail ? `: ${dim(detail)}` : ""}`;
+}
+
+function withDefaultSection(line: ProgressLine, section: SwitchboardProgressSection): ProgressLine {
+  return { ...line, section: line.section ?? section };
 }
 
 function memberCountDetail(details: Record<string, unknown>, field: string): string | undefined {
@@ -412,6 +488,11 @@ function recordValue(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
+}
+
+function arrayRecordField(record: Record<string, unknown>, field: string): unknown[] {
+  const value = record[field];
+  return Array.isArray(value) ? value : [];
 }
 
 function stringRecordField(record: Record<string, unknown>, field: string): string | undefined {

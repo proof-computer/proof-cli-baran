@@ -1,6 +1,6 @@
 {
   "name": "@proof-computer/proof-cli-switchboard",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Switchboard plugin for the PROOF command line interface.",
   "private": false,
   "type": "module",
@@ -37,7 +37,8 @@
     "@polkadot/keyring": "^14.0.3",
     "@polkadot/util": "^14.0.3",
     "@polkadot/util-crypto": "^14.0.3",
-    "@proofcomputer/switchboard-sdk": "github:proof-computer/switchboard-sdk#v0.1.5",
+    "@proof-computer/switchboard-runtime": "file:../switchboard-runtime-js",
+    "@proof-computer/switchboard-workflows": "file:../switchboard-workflows-js",
     "acme-client": "^5.4.0",
     "dotenv": "^17.4.2",
     "esbuild": "^0.28.0",
@@ -78,7 +79,8 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@proofcomputer/switchboard-sdk",
+      "@proof-computer/switchboard-runtime",
+      "@proof-computer/switchboard-workflows",
       "esbuild"
     ]
   },

@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
+import { createDeployWorkflowReadbackRetryFetch } from "../src/switchboard-core/cli/src/index.js";
 import { runSwitchboardCatalogBuildNative } from "../src/commands/switchboard/catalog/build.js";
 import { runSwitchboardCatalogInspectNative } from "../src/commands/switchboard/catalog/inspect.js";
 import { runSwitchboardCatalogSetStateNative } from "../src/commands/switchboard/catalog/set-state.js";
@@ -1606,8 +1607,23 @@ test("emits native deploy progress from proof runner events", async () => {
   ], {
     runner: async (_argv, options) => {
       options?.progress?.({ type: "run-context", workflowId: "wf_deploy", relayUrl: "https://relay.example.test" });
-      options?.progress?.({ type: "deployment-intent", intentId: "di_deploy" });
+      options?.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
+      options?.progress?.({ type: "workflow", event: "capacity_selected", details: { processor: "5GrwvaEF5zXb26Fz9rcQpDWSXg7yFRqXBnhJUjqbkNbA" } });
+      options?.progress?.({ type: "workflow", event: "intent_created", details: { intentId: "di_deploy" } });
       options?.progress?.({ type: "acurast-sdk", sdkStatus: "Uploaded", data: { ipfsHash: "bafydeploy" } });
+      options?.progress?.({
+        type: "acurast-sdk",
+        sdkStatus: "Prepared",
+        data: {
+          job: {
+            extra: { requirements: { slots: 1 } },
+            schedule: {
+              startTime: 1_779_019_200_000,
+              maxStartDelay: 300_000
+            }
+          }
+        }
+      });
       options?.progress?.({
         type: "acurast-sdk",
         sdkStatus: "Prepared",
@@ -1623,6 +1639,7 @@ test("emits native deploy progress from proof runner events", async () => {
       });
       options?.progress?.({ type: "acurast-sdk", sdkStatus: "Submit", data: { txHash: "0xdeploy" } });
       options?.progress?.({ type: "workflow", event: "deploy_action_submitted", details: { deploymentId: "59420" } });
+      options?.progress?.({ type: "wait", step: "relay_readback", detail: "GET /v1/deployment-intents/:id returned 502; retrying 2/4" });
       options?.progress?.({ type: "workflow", event: "runtime_claimed", details: { runtimeSigner: `0x${"11".repeat(32)}` } });
       options?.progress?.({ type: "workflow", event: "quote_ready", details: { sessionId: `0x${"22".repeat(32)}` } });
       options?.progress?.({ type: "workflow", event: "funding_submitted", details: { txHash: "0xfund" } });
@@ -1636,15 +1653,19 @@ test("emits native deploy progress from proof runner events", async () => {
 
   assert.equal(captured.result, 0);
   assert.match(captured.stdout, /Deployment progress/);
+  assert.match(captured.stdout, /Switchboard Runner/);
   assert.match(captured.stdout, /Run context/);
+  assert.match(captured.stdout, /\[\.\.\] Capacity selection: checking operator capacity/);
   assert.match(captured.stdout, /Selected processor/);
-  assert.match(captured.stdout, /Deployment intent/);
+  assert.match(captured.stdout, /\[ok\] Selected processor: 5GrwvaEF\.\.\.qbkNbA/);
+  assert.match(captured.stdout, /\[ok\] Deployment intent: di_deploy/);
   assert.match(captured.stdout, /Acurast SDK uploaded code/);
   assert.match(captured.stdout, /Acurast SDK prepared job/);
   assert.match(captured.stdout, /start=2026-05-17T12:00:00\.000Z/);
   assert.match(captured.stdout, /max-start=2026-05-17T12:05:00\.000Z/);
   assert.match(captured.stdout, /Acurast SDK submitted extrinsic/);
   assert.match(captured.stdout, /Submitted to Acurast/);
+  assert.match(captured.stdout, /Relay readback/);
   assert.match(captured.stdout, /Job claimed runtime/);
   assert.match(captured.stdout, /Quote ready/);
   assert.match(captured.stdout, /Funded Hub session/);
@@ -1653,19 +1674,135 @@ test("emits native deploy progress from proof runner events", async () => {
   assert.match(captured.stdout, /Registered on Hub/);
   assert.match(captured.stdout, /Validation observed/);
   assert.match(captured.stdout, /Wrote deployment report/);
+  assert.doesNotMatch(captured.stdout, /waiting for capacity selection/);
+  assert.doesNotMatch(captured.stdout, /pending relay allocation/);
+  assert.doesNotMatch(captured.stdout, /\[info\] Deployment intent(?:\n|$)/);
+  assert.equal(matchCount(captured.stdout, /Acurast SDK prepared job/g), 1);
+  assertTextOrder(captured.stdout, "Capacity selection", "Selected processor");
+  assertTextOrder(captured.stdout, "Selected processor", "Deployment intent: di_deploy");
+  assertTextOrder(captured.stdout, "Deployment intent: di_deploy", "Acurast SDK uploaded code");
+  assert.match(captured.stdout, /\n\nAcurast deployer\n  \[ok\] Acurast SDK uploaded code:/);
+  assert.match(captured.stdout, /\n\nSwitchboard Runner\n  \[\.\.\] Relay readback:/);
+  assert.match(captured.stdout, /\n\nReport\n  \[ok\] Wrote deployment report:/);
+});
+
+test("restores colored native deploy progress headers and markers", async () => {
+  const captured = await withProcessEnv({
+    FORCE_COLOR: undefined,
+    NO_COLOR: undefined,
+    SWITCHBOARD_COLOR: "1",
+    SWITCHBOARD_DEPLOY_COLOR: undefined,
+    TERM: "xterm-256color"
+  }, () => captureConsole(async () => runSwitchboardDeployNative([
+    "--entrypoint",
+    "src/index.ts",
+    "--processor",
+    "5GrwvaEF5zXb26Fz9rcQpDWSXg7yFRqXBnhJUjqbkNbA",
+    "--yes"
+  ], {
+    runner: async (_argv, options) => {
+      options?.progress?.({ type: "report", path: "/tmp/switchboard-deploy-report.json" });
+    }
+  })));
+
+  assert.equal(captured.result, 0);
+  assert.match(captured.stdout, /\u001b\[38;2;255;106;44m/);
+  assert.match(captured.stdout, /Switchboard Runner/);
+  assert.match(captured.stdout, /\u001b\[32m\[ok\]\u001b\[0m/);
 });
 
 test("keeps native deploy json output free of progress text", async () => {
   const captured = await captureConsole(async () => runSwitchboardDeployNative(["--entrypoint", "src/index.ts", "--yes", "--json"], {
     runner: async (_argv, options) => {
       options?.progress?.({ type: "line", label: "Deployment progress" });
+      options?.progress?.({ type: "line", section: "Acurast deployer", label: "Acurast SDK uploaded code", detail: "bafy" });
+      options?.progress?.({ type: "wait", step: "relay_readback", detail: "GET /v1/deployment-intents/:id returned 502; retrying 2/4" });
       console.log(JSON.stringify({ ok: true, action: "deploy" }));
     }
   }));
 
   assert.equal(captured.result, 0);
   assert.doesNotMatch(captured.stdout, /Deployment progress/);
+  assert.doesNotMatch(captured.stdout, /Acurast deployer/);
+  assert.doesNotMatch(captured.stdout, /Relay readback/);
   assert.deepEqual(JSON.parse(captured.stdout), { ok: true, action: "deploy" });
+});
+
+test("retries transient deployment intent readback responses", async () => {
+  const statuses = [502, 502, 200];
+  const progressDetails: string[] = [];
+  let calls = 0;
+  const retryFetch = createDeployWorkflowReadbackRetryFetch({
+    fetchImpl: async () => {
+      const status = statuses[calls] ?? 200;
+      calls += 1;
+      return new Response(status === 200 ? JSON.stringify({ ok: true }) : "", { status });
+    },
+    progress: (event) => {
+      if (event.type === "wait" && event.step === "relay_readback" && event.detail) {
+        progressDetails.push(event.detail);
+      }
+    },
+    sleep: async () => {}
+  });
+
+  const response = await retryFetch(new URL("https://relay.example.test/v1/deployment-intents/di_test"), { method: "GET" });
+
+  assert.equal(response.status, 200);
+  assert.equal(calls, 3);
+  assert.deepEqual(progressDetails, [
+    "GET /v1/deployment-intents/:id returned 502; retrying 2/4",
+    "GET /v1/deployment-intents/:id returned 502; retrying 3/4"
+  ]);
+});
+
+test("retries transient deployment intent group readback responses", async () => {
+  let calls = 0;
+  const retryFetch = createDeployWorkflowReadbackRetryFetch({
+    fetchImpl: async () => {
+      calls += 1;
+      return new Response(JSON.stringify({ ok: true }), { status: calls === 1 ? 503 : 200 });
+    },
+    sleep: async () => {}
+  });
+
+  const response = await retryFetch(new URL("https://relay.example.test/v1/deployment-intent-groups/dig_test"), { method: "GET" });
+
+  assert.equal(response.status, 200);
+  assert.equal(calls, 2);
+});
+
+test("does not retry deployment workflow write requests", async () => {
+  let calls = 0;
+  const retryFetch = createDeployWorkflowReadbackRetryFetch({
+    fetchImpl: async () => {
+      calls += 1;
+      return new Response("", { status: 502 });
+    },
+    sleep: async () => {}
+  });
+
+  const response = await retryFetch(new URL("https://relay.example.test/v1/deployment-intents/di_test/quote"), { method: "POST" });
+
+  assert.equal(response.status, 502);
+  assert.equal(calls, 1);
+});
+
+test("fails deployment intent readback after bounded retries", async () => {
+  let calls = 0;
+  const retryFetch = createDeployWorkflowReadbackRetryFetch({
+    fetchImpl: async () => {
+      calls += 1;
+      return new Response("", { status: 502 });
+    },
+    sleep: async () => {}
+  });
+
+  await assert.rejects(
+    () => retryFetch(new URL("https://relay.example.test/v1/deployment-intents/di_test"), { method: "GET" }),
+    /Relay readback failed after 4 attempts: GET \/v1\/deployment-intents\/:id returned 502/
+  );
+  assert.equal(calls, 4);
 });
 
 test("forwards native launch-demo args to the local Switchboard runner", async () => {
@@ -1680,6 +1817,24 @@ test("forwards native launch-demo args to the local Switchboard runner", async (
   assert.deepEqual(forwarded, ["--dry-run", "--json"]);
 });
 
+test("keeps native launch-demo json output free of progress text", async () => {
+  const captured = await captureConsole(async () => runSwitchboardLaunchDemoNative(["--yes-spend", "--json"], {
+    runner: async (_argv, options) => {
+      options?.progress?.({ type: "line", label: "Deployment progress" });
+      options?.progress?.({ type: "line", section: "Demo project", status: "warn", label: "npm", detail: "deprecated package" });
+      options?.progress?.({ type: "wait", step: "relay_readback", detail: "GET /v1/deployment-intents/:id returned 503; retrying 2/4" });
+      console.log(JSON.stringify({ ok: true, action: "launch-demo" }));
+    }
+  }));
+
+  assert.equal(captured.result, 0);
+  assert.doesNotMatch(captured.stdout, /Deployment progress/);
+  assert.doesNotMatch(captured.stdout, /Demo project/);
+  assert.doesNotMatch(captured.stdout, /npm/);
+  assert.doesNotMatch(captured.stdout, /Relay readback/);
+  assert.deepEqual(JSON.parse(captured.stdout), { ok: true, action: "launch-demo" });
+});
+
 test("emits native launch-demo progress from proof runner events", async () => {
   const captured = await captureConsole(async () => runSwitchboardLaunchDemoNative([
     "--processor",
@@ -1687,7 +1842,13 @@ test("emits native launch-demo progress from proof runner events", async () => {
     "--yes-spend"
   ], {
     runner: async (_argv, options) => {
-      options?.progress?.({ type: "deployment-intent", intentId: "di_demo" });
+      options?.progress?.({ type: "line", section: "Demo project", status: "wait", label: "Dependencies", detail: "installing demo package" });
+      options?.progress?.({ type: "line", section: "Demo project", status: "warn", label: "npm", detail: "deprecated package" });
+      options?.progress?.({ type: "line", section: "Demo project", status: "ok", label: "Dependencies", detail: "installed added 24 packages in 2s" });
+      options?.progress?.({ type: "line", section: "Switchboard demo", label: "Demo package", detail: "github:proof-computer/switchboard-express-demo#v0.2.0" });
+      options?.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
+      options?.progress?.({ type: "workflow", event: "capacity_selected", details: { processor: "5GrwvaEF5zXb26Fz9rcQpDWSXg7yFRqXBnhJUjqbkNbA" } });
+      options?.progress?.({ type: "workflow", event: "intent_created", details: { intentId: "di_demo" } });
       options?.progress?.({ type: "acurast-sdk", sdkStatus: "Uploaded", data: { ipfsHash: "bafydemo" } });
       options?.progress?.({ type: "workflow", event: "deploy_action_submitted", details: { deploymentId: "59421" } });
       options?.progress?.({ type: "workflow", event: "runtime_claimed", details: { runtimeSigner: `0x${"33".repeat(32)}` } });
@@ -1703,8 +1864,12 @@ test("emits native launch-demo progress from proof runner events", async () => {
 
   assert.equal(captured.result, 0);
   assert.match(captured.stdout, /Deployment progress/);
-  assert.match(captured.stdout, /Selected processor/);
-  assert.match(captured.stdout, /Deployment intent/);
+  assert.match(captured.stdout, /\n\nDemo project\n  \[\.\.\] Dependencies: installing demo package/);
+  assert.match(captured.stdout, /\[warn\] npm: deprecated package/);
+  assert.match(captured.stdout, /\n\nSwitchboard demo\n  \[info\] Demo package:/);
+  assert.match(captured.stdout, /\[\.\.\] Capacity selection: checking operator capacity/);
+  assert.match(captured.stdout, /\[ok\] Selected processor: 5GrwvaEF\.\.\.qbkNbA/);
+  assert.match(captured.stdout, /\[ok\] Deployment intent: di_demo/);
   assert.match(captured.stdout, /Acurast SDK uploaded code/);
   assert.match(captured.stdout, /Submitted to Acurast/);
   assert.match(captured.stdout, /Job claimed runtime/);
@@ -1715,6 +1880,10 @@ test("emits native launch-demo progress from proof runner events", async () => {
   assert.match(captured.stdout, /Registered on Hub/);
   assert.match(captured.stdout, /Validation observed/);
   assert.match(captured.stdout, /Wrote deployment report/);
+  assert.doesNotMatch(captured.stdout, /waiting for capacity selection/);
+  assert.doesNotMatch(captured.stdout, /pending relay allocation/);
+  assertTextOrder(captured.stdout, "Capacity selection", "Selected processor");
+  assertTextOrder(captured.stdout, "Selected processor", "Deployment intent: di_demo");
 });
 
 test("emits HA launch-demo group progress and reports acurast-sdk submit", async () => {
@@ -1727,6 +1896,7 @@ test("emits HA launch-demo group progress and reports acurast-sdk submit", async
     "--yes-spend"
   ], {
     runner: async (_argv, options) => {
+      options?.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
       options?.progress?.({
         type: "selected-processors",
         processors: [
@@ -1736,7 +1906,20 @@ test("emits HA launch-demo group progress and reports acurast-sdk submit", async
         replicas: 2,
         minReady: 2
       });
-      options?.progress?.({ type: "deployment-intent-group", groupId: "dig_demo_ha", replicas: 2, minReady: 2 });
+      options?.progress?.({ type: "workflow", event: "intent_group_created", details: { groupId: "dig_demo_ha", expectedReplicas: 2, minReady: 2 } });
+      options?.progress?.({
+        type: "acurast-sdk",
+        sdkStatus: "Prepared",
+        data: {
+          job: {
+            extra: { requirements: { slots: 2 } },
+            schedule: {
+              startTime: 1_779_019_200_000,
+              maxStartDelay: 300_000
+            }
+          }
+        }
+      });
       options?.progress?.({
         type: "acurast-sdk",
         sdkStatus: "Prepared",
@@ -1764,8 +1947,9 @@ test("emits HA launch-demo group progress and reports acurast-sdk submit", async
 
   assert.equal(captured.result, 0);
   assert.match(captured.stdout, /Deployment progress/);
-  assert.match(captured.stdout, /Selected processors/);
-  assert.match(captured.stdout, /Deployment intent group/);
+  assert.match(captured.stdout, /\[\.\.\] Capacity selection: checking operator capacity/);
+  assert.match(captured.stdout, /\[ok\] Selected processors:/);
+  assert.match(captured.stdout, /\[ok\] Deployment intent group: dig_demo_ha replicas=2 min-ready=2/);
   assert.match(captured.stdout, /Acurast SDK prepared job/);
   assert.match(captured.stdout, /replicas=2/);
   assert.match(captured.stdout, /start=2026-05-17T12:00:00\.000Z/);
@@ -1780,6 +1964,28 @@ test("emits HA launch-demo group progress and reports acurast-sdk submit", async
   assert.match(captured.stdout, /Registered on Hub/);
   assert.match(captured.stdout, /Validation observed/);
   assert.match(captured.stdout, /Wrote deployment report/);
+  assert.doesNotMatch(captured.stdout, /pending relay allocation/);
+  assert.equal(matchCount(captured.stdout, /Acurast SDK prepared job/g), 1);
+  assertTextOrder(captured.stdout, "Capacity selection", "Selected processors");
+  assertTextOrder(captured.stdout, "Selected processors", "Deployment intent group: dig_demo_ha");
+});
+
+test("keeps HA launch-demo json output free of progress text", async () => {
+  const captured = await captureConsole(async () => runSwitchboardLaunchDemoNative(["--ha", "--yes-spend", "--json"], {
+    runner: async (_argv, options) => {
+      options?.progress?.({ type: "line", section: "Demo project", status: "warn", label: "npm", detail: "deprecated package" });
+      options?.progress?.({ type: "workflow", event: "intent_group_created", details: { groupId: "dig_json", expectedReplicas: 2, minReady: 2 } });
+      options?.progress?.({ type: "wait", step: "relay_readback", detail: "GET /v1/deployment-intent-groups/:id returned 504; retrying 2/4" });
+      console.log(JSON.stringify({ ok: true, action: "launch-demo-ha" }));
+    }
+  }));
+
+  assert.equal(captured.result, 0);
+  assert.doesNotMatch(captured.stdout, /Deployment progress/);
+  assert.doesNotMatch(captured.stdout, /Demo project/);
+  assert.doesNotMatch(captured.stdout, /Deployment intent group/);
+  assert.doesNotMatch(captured.stdout, /Relay readback/);
+  assert.deepEqual(JSON.parse(captured.stdout), { ok: true, action: "launch-demo-ha" });
 });
 
 test("forwards native bootstrap args to the local Switchboard runner", async () => {
@@ -3044,6 +3250,42 @@ async function captureConsole<T>(fn: () => Promise<T>): Promise<{ result: T; std
     console.log = originalLog;
     console.error = originalError;
   }
+}
+
+async function withProcessEnv<T>(updates: Record<string, string | undefined>, fn: () => Promise<T>): Promise<T> {
+  const previous = new Map<string, string | undefined>();
+  for (const key of Object.keys(updates)) {
+    previous.set(key, process.env[key]);
+    const value = updates[key];
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    for (const [key, value] of previous.entries()) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  }
+}
+
+function assertTextOrder(text: string, first: string, second: string): void {
+  const firstIndex = text.indexOf(first);
+  const secondIndex = text.indexOf(second);
+  assert.notEqual(firstIndex, -1, `missing first text: ${first}`);
+  assert.notEqual(secondIndex, -1, `missing second text: ${second}`);
+  assert.ok(firstIndex < secondIndex, `expected ${first} before ${second}`);
+}
+
+function matchCount(text: string, pattern: RegExp): number {
+  return Array.from(text.matchAll(pattern)).length;
 }
 
 async function withMutedConsoleError<T>(fn: () => Promise<T>): Promise<T> {

@@ -29,9 +29,12 @@ importers:
       '@polkadot/util-crypto':
         specifier: ^14.0.3
         version: 14.0.3(@polkadot/util@14.0.3)
-      '@proofcomputer/switchboard-sdk':
-        specifier: github:proof-computer/switchboard-sdk#v0.1.5
-        version: https://codeload.github.com/proof-computer/switchboard-sdk/tar.gz/d6b02cf1a3298a486d7828c9b9122c1e94f189dd
+      '@proof-computer/switchboard-runtime':
+        specifier: file:../switchboard-runtime-js
+        version: file:../switchboard-runtime-js
+      '@proof-computer/switchboard-workflows':
+        specifier: file:../switchboard-workflows-js
+        version: file:../switchboard-workflows-js
       acme-client:
         specifier: ^5.4.0
         version: 5.4.0
@@ -815,9 +818,12 @@ packages:
     resolution: {integrity: sha512-tOPdkMye3iuXnuFtdNg5+iSu7Cz9LRL8z5psMuZpUpThMYChGsS2pDFtNvXOKU8ohhO+frY9VdJ9VBg1WL9Iug==}
     engines: {node: '>=18'}
 
-  '@proofcomputer/switchboard-sdk@https://codeload.github.com/proof-computer/switchboard-sdk/tar.gz/d6b02cf1a3298a486d7828c9b9122c1e94f189dd':
-    resolution: {tarball: https://codeload.github.com/proof-computer/switchboard-sdk/tar.gz/d6b02cf1a3298a486d7828c9b9122c1e94f189dd}
-    version: 0.1.4
+  '@proof-computer/switchboard-runtime@file:../switchboard-runtime-js':
+    resolution: {directory: ../switchboard-runtime-js, type: directory}
+    engines: {node: '>=20'}
+
+  '@proof-computer/switchboard-workflows@file:../switchboard-workflows-js':
+    resolution: {directory: ../switchboard-workflows-js, type: directory}
     engines: {node: '>=20'}
 
   '@scure/base@1.2.6':
@@ -3202,17 +3208,24 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@proofcomputer/switchboard-sdk@https://codeload.github.com/proof-computer/switchboard-sdk/tar.gz/d6b02cf1a3298a486d7828c9b9122c1e94f189dd':
+  '@proof-computer/switchboard-runtime@file:../switchboard-runtime-js':
+    dependencies:
+      acme-client: 5.4.0
+      ethers: 6.16.0
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  '@proof-computer/switchboard-workflows@file:../switchboard-workflows-js':
     dependencies:
       '@polkadot/keyring': 14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)
       '@polkadot/util': 14.0.3
       '@polkadot/util-crypto': 14.0.3(@polkadot/util@14.0.3)
-      acme-client: 5.4.0
       ethers: 6.16.0
       zod: 4.4.3
     transitivePeerDependencies:
       - bufferutil
-      - supports-color
       - utf-8-validate
 
   '@scure/base@1.2.6': {}

@@ -31,10 +31,10 @@ import {
   type SwitchboardDeployWorkflowSnapshot,
   type WorkflowActionReceipt,
   type WorkflowRequiredAction
-} from "@proofcomputer/switchboard-sdk/workflows";
-import { registerIngressWithRelay } from "@proofcomputer/switchboard-sdk";
-import type { QuoteResponse } from "@proofcomputer/switchboard-sdk/funding";
-import { SwitchboardControlPlaneClient, type DeploymentIntentBootstrap, type DeploymentIntentGroupBootstrap } from "@proofcomputer/switchboard-sdk/control-plane";
+} from "@proof-computer/switchboard-workflows";
+import { registerIngressWithRelay } from "@proof-computer/switchboard-runtime";
+import type { QuoteResponse } from "@proof-computer/switchboard-workflows/funding";
+import { SwitchboardControlPlaneClient, type DeploymentIntentBootstrap, type DeploymentIntentGroupBootstrap } from "@proof-computer/switchboard-workflows/control-plane";
 import {
   discoverManagerProcessors,
   rpcForAcurastNetwork,
@@ -106,12 +106,15 @@ import {
 import {
   compactId,
   createGroupedDeployTranscriptWriter,
+  dim,
   formatAcuUnits,
   formatRows,
   sectionTitle,
   statusLine,
+  statusMarker,
   switchboardColorEnabled,
   type GroupedDeployTranscriptWriter,
+  type OutputStatus,
   type OutputRow
 } from "./output.js";
 import { runOpsSubcommand, type OpsSubcommandArgs } from "./ops.js";
@@ -154,9 +157,9 @@ const DEFAULT_LAUNCH_DEMO_SCHEDULE_BUFFER_MINUTES = 0;
 const DEFAULT_LAUNCH_DEMO_START_DELAY_MS = 180_000;
 const DEFAULT_LAUNCH_DEMO_MAX_COST_PER_EXECUTION = "40000000000";
 const DEFAULT_LAUNCH_DEMO_PROCESSOR_MAX_AGE_SECONDS = 900;
-const DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC = "github:proof-computer/switchboard-express-demo#v0.1.11";
-const MIN_LAUNCH_DEMO_RUNTIME_VERSION = "0.1.11";
-const MIN_LAUNCH_DEMO_SDK_VERSION = "0.1.5";
+const DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC = "github:proof-computer/switchboard-express-demo#v0.2.0";
+const MIN_LAUNCH_DEMO_RUNTIME_VERSION = "0.2.0";
+const MIN_LAUNCH_DEMO_RUNTIME_PACKAGE_VERSION = "0.1.0";
 const LAUNCH_DEMO_ENTRYPOINT = "src/server.ts";
 const SSH_TEMPLATE_NAME = "ssh";
 const SSH_TEMPLATE_DISTRO = "ubuntu";
@@ -2485,6 +2488,7 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
     optionalEnv("ACURAST_MAX_COST_PER_EXECUTION") ??
     DEFAULT_LAUNCH_DEMO_MAX_COST_PER_EXECUTION;
   const privateAcurastEnv = acurastCliCredentialEnv(runtime, acurastNetwork);
+  runtime.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
   const selection = await selectLaunchDemoCapacity({
     relayUrl,
     relayUrls,
@@ -2619,30 +2623,12 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
   });
   const workflowStore = deployWorkflowStore(flags);
   const workflow = new SwitchboardDeployWorkflow(workflowInput, deployWorkflowAdapters(workflowInput, workflowStore, {
-    helperEnv: contextRuntimeEnv(runtime)
+    helperEnv: contextRuntimeEnv(runtime),
+    progress: runtime.progress
   }));
   const capacitySnapshot = await workflow.advanceOnce();
   emitRunContextProgress(runtime, capacitySnapshot.workflowId, operationRelayUrl);
-  if (groupDeployEnabled) {
-    runtime.progress?.({
-      type: "selected-processors",
-      processors: selection.members.map((member) => member.processor).filter((processor): processor is string => Boolean(processor)),
-      replicas: selection.members.length,
-      minReady: minReadyProcessors
-    });
-    runtime.progress?.({
-      type: "deployment-intent-group",
-      groupId: stringRecordField(recordValue(capacitySnapshot.data.deploymentIntentGroup), "groupId"),
-      replicas: selection.members.length,
-      minReady: minReadyProcessors
-    });
-  } else {
-    runtime.progress?.({ type: "selected-processor", processor: selection.processor });
-    runtime.progress?.({
-      type: "deployment-intent",
-      intentId: stringRecordField(recordValue(capacitySnapshot.data.deploymentIntent), "intentId")
-    });
-  }
+  const emittedEventCount = emitCapacitySelectedProgress(runtime, capacitySnapshot);
 
   if (boolFlag(flags, "dry-run")) {
     const output = {
@@ -2726,7 +2712,8 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
         runtime,
         action: "launch-demo",
         json: boolFlag(flags, "json"),
-        workDir: demoProject.dir
+        workDir: demoProject.dir,
+        emittedEventCount
       })
     : await runDeployWorkflowCompatibilityRunner({
         workflow,
@@ -2737,7 +2724,8 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
         runtime,
         action: "launch-demo",
         json: boolFlag(flags, "json"),
-        workDir: demoProject.dir
+        workDir: demoProject.dir,
+        emittedEventCount
       });
   const output = deployOutput(report, reportPath, {
     action: "launch-demo",
@@ -2787,7 +2775,7 @@ async function createLaunchDemoProject(flags: Map<string, string | boolean>): Pr
           start: "node --import tsx src/server.ts"
         },
         dependencies: {
-          "@proofcomputer/switchboard-express-demo": packageSpec
+          "@proof-computer/switchboard-express-demo": packageSpec
         },
         devDependencies: {
           "@types/node": "^24.10.1",
@@ -2801,7 +2789,7 @@ async function createLaunchDemoProject(flags: Map<string, string | boolean>): Pr
   );
   await writeFile(
     path.join(dir, LAUNCH_DEMO_ENTRYPOINT),
-    `import { startSwitchboardExpressDemo } from "@proofcomputer/switchboard-express-demo";
+    `import { startSwitchboardExpressDemo } from "@proof-computer/switchboard-express-demo";
 
 void startSwitchboardExpressDemo().catch((error) => {
   console.error(error);
@@ -2840,7 +2828,7 @@ async function launchDemoPackageMetadata(packageSpec: string): Promise<{ name?: 
   const npmVersion = packageSpec.match(/@([0-9]+(?:\.[0-9]+){1,2}(?:[-+][A-Za-z0-9.-]+)?)$/)?.[1];
   const knownDemoPackage = /(^|[/@:])switchboard-express-demo($|[#@?])/.test(packageSpec);
   return {
-    name: knownDemoPackage ? "@proofcomputer/switchboard-express-demo" : undefined,
+    name: knownDemoPackage ? "@proof-computer/switchboard-express-demo" : undefined,
     version: tag ?? npmVersion
   };
 }
@@ -2856,8 +2844,8 @@ function assertLaunchDemoRuntimePackageFresh(project: LaunchDemoProject, flags: 
 
   const error =
     `SB_LAUNCH_DEMO_RUNTIME_STALE: launch-demo package ${project.packageSpec} resolves to ` +
-    `@proofcomputer/switchboard-express-demo v${project.packageVersion}, which lacks the current runtime support for gateway upstream admission, bounded certificate-prep progress with ECDSA CSRs, and post-certificate readiness progress. ` +
-    `Use ${DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC}, or publish a demo package built with @proofcomputer/switchboard-sdk >= ${MIN_LAUNCH_DEMO_SDK_VERSION}.`;
+    `@proof-computer/switchboard-express-demo v${project.packageVersion}, which lacks the current runtime support for gateway upstream admission, bounded certificate-prep progress with ECDSA CSRs, and post-certificate readiness progress. ` +
+    `Use ${DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC}, or publish a demo package built with @proof-computer/switchboard-runtime >= ${MIN_LAUNCH_DEMO_RUNTIME_PACKAGE_VERSION}.`;
   if (boolFlag(flags, "json")) {
     const handled = new Error(error);
     writeOutput(flags, {
@@ -2867,9 +2855,9 @@ function assertLaunchDemoRuntimePackageFresh(project: LaunchDemoProject, flags: 
       error,
       demoProject: project,
       required: {
-        package: "@proofcomputer/switchboard-express-demo",
+        package: "@proof-computer/switchboard-express-demo",
         minVersion: MIN_LAUNCH_DEMO_RUNTIME_VERSION,
-        minSdkVersion: MIN_LAUNCH_DEMO_SDK_VERSION,
+        minRuntimePackageVersion: MIN_LAUNCH_DEMO_RUNTIME_PACKAGE_VERSION,
         capabilities: ["gateway_upstream_admission", "certificate_prep_progress", "ecdsa_p256_csr", "post_certificate_readiness_progress"],
         packageSpec: DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC
       }
@@ -2882,7 +2870,7 @@ function assertLaunchDemoRuntimePackageFresh(project: LaunchDemoProject, flags: 
 
 function launchDemoPackageIsKnownExpressDemo(project: LaunchDemoProject): boolean {
   return (
-    project.packageName === "@proofcomputer/switchboard-express-demo" ||
+    project.packageName === "@proof-computer/switchboard-express-demo" ||
     /(^|[/@:])switchboard-express-demo($|[#@?])/.test(project.packageSpec)
   );
 }
@@ -2911,22 +2899,68 @@ function parseStableSemver(value: string): [number, number, number] | undefined 
 
 async function installLaunchDemoProject(project: LaunchDemoProject, flags: Map<string, string | boolean>): Promise<void> {
   if (!boolFlag(flags, "json")) {
+    console.log("");
     console.log(sectionTitle("Demo project"));
     printOutputRows([
       { label: "Project", value: project.dir },
       { label: "Package", value: project.packageSpec }
     ]);
+    printProgressLine("wait", "Dependencies", "installing demo package");
   }
   const install = await runCliChild("npm", ["install", "--fund=false", "--audit=false"], {
     cwd: project.dir,
     env: {
       npm_config_cache: optionalEnv("npm_config_cache") ?? optionalEnv("NPM_CONFIG_CACHE") ?? path.join(tmpdir(), "switchboard-launch-demo-npm-cache")
     },
-    stream: !boolFlag(flags, "json")
+    stream: false,
+    allowFailure: true
   });
   if (install.exitCode !== 0) {
-    throw new Error(`Failed to install launch-demo project dependencies in ${project.dir}: ${install.stderr || install.stdout}`);
+    throw new Error(`Failed to install launch-demo project dependencies in ${project.dir}:\n${npmInstallFailureOutput(install)}`);
   }
+  if (!boolFlag(flags, "json")) {
+    for (const warning of npmInstallWarnings(install.stdout, install.stderr)) {
+      printProgressLine("warn", "npm", warning);
+    }
+    printProgressLine("ok", "Dependencies", `installed ${npmInstallSummary(install.stdout, install.stderr) ?? "demo package"}`);
+  }
+}
+
+function printProgressLine(status: OutputStatus, label: string, detail?: string): void {
+  console.log(`  ${statusMarker(status)} ${label}${detail ? `: ${dim(detail)}` : ""}`);
+}
+
+function npmInstallWarnings(stdout: string, stderr: string): string[] {
+  const warnings: string[] = [];
+  const seen = new Set<string>();
+  for (const line of `${stdout}\n${stderr}`.split(/\r?\n/)) {
+    const match = line.trim().match(/^npm\s+(?:warn|WARN)\s+(.*)$/);
+    const warning = match?.[1]?.trim();
+    if (warning && !seen.has(warning)) {
+      seen.add(warning);
+      warnings.push(warning);
+    }
+  }
+  return warnings;
+}
+
+function npmInstallSummary(stdout: string, stderr: string): string | undefined {
+  const lines = `${stdout}\n${stderr}`
+    .split(/\r?\n/)
+    .map((line) => line.trim().replace(/\s+/g, " "))
+    .filter(Boolean);
+  return [...lines].reverse().find((line) => (
+    /^(?:added|removed|changed|audited)\s+\d+\s+packages?\b/i.test(line) ||
+    /^up to date\b/i.test(line)
+  ));
+}
+
+function npmInstallFailureOutput(result: { stdout: string; stderr: string; exitCode: number }): string {
+  const parts = [
+    result.stderr.trim() ? `stderr:\n${result.stderr.trim()}` : undefined,
+    result.stdout.trim() ? `stdout:\n${result.stdout.trim()}` : undefined
+  ].filter(Boolean);
+  return parts.join("\n\n") || `npm install exited with ${result.exitCode}`;
 }
 
 function launchDemoAcurastNetwork(flags: Map<string, string | boolean>): AcurastNetwork {
@@ -4261,11 +4295,14 @@ function deployWorkflowInputFromCli(input: {
 function deployWorkflowAdapters(
   input: SwitchboardDeployWorkflowInput,
   store?: ReturnType<typeof deployWorkflowStore>,
-  options: { helperEnv?: Record<string, string | undefined> } = {}
+  options: { helperEnv?: Record<string, string | undefined>; progress?: CliRuntime["progress"] } = {}
 ): SwitchboardDeployWorkflowAdapters {
   const controlPlane = new SwitchboardControlPlaneClient({
     relayUrl: input.relayUrl,
-    allowInsecureHttp: input.allowInsecureHttp === true
+    allowInsecureHttp: input.allowInsecureHttp === true,
+    fetchImpl: createDeployWorkflowReadbackRetryFetch({
+      progress: options.progress
+    })
   });
   return {
     controlPlane,
@@ -4308,6 +4345,134 @@ function deployWorkflowAdapters(
     },
     store
   };
+}
+
+const DEPLOY_WORKFLOW_READBACK_RETRY_ATTEMPTS = 4;
+const DEPLOY_WORKFLOW_READBACK_RETRY_DELAYS_MS = [1_000, 2_000, 4_000] as const;
+const DEPLOYMENT_INTENT_READBACK_PATH = /^\/v1\/deployment-intents\/[^/]+$/;
+const DEPLOYMENT_INTENT_GROUP_READBACK_PATH = /^\/v1\/deployment-intent-groups\/[^/]+$/;
+
+export function createDeployWorkflowReadbackRetryFetch(options: {
+  fetchImpl?: typeof fetch;
+  progress?: CliRuntime["progress"];
+  sleep?: (ms: number) => Promise<void>;
+} = {}): typeof fetch {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const sleepImpl = options.sleep ?? sleep;
+  return async (resource: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+    const request = deployWorkflowReadbackRequest(resource, init);
+    if (!request) {
+      return fetchImpl(resource, init);
+    }
+
+    for (let attempt = 1; attempt <= DEPLOY_WORKFLOW_READBACK_RETRY_ATTEMPTS; attempt += 1) {
+      try {
+        const response = await fetchImpl(resource, init);
+        if (!isRetryableDeployWorkflowReadbackStatus(response.status)) {
+          return response;
+        }
+        if (attempt >= DEPLOY_WORKFLOW_READBACK_RETRY_ATTEMPTS) {
+          await drainRetryResponse(response);
+          throw new Error(
+            `Relay readback failed after ${DEPLOY_WORKFLOW_READBACK_RETRY_ATTEMPTS} attempts: ${request.method} ${request.pathLabel} returned ${response.status}`
+          );
+        }
+        emitDeployWorkflowReadbackRetryProgress(options.progress, {
+          method: request.method,
+          pathLabel: request.pathLabel,
+          reason: `returned ${response.status}`,
+          nextAttempt: attempt + 1
+        });
+        await drainRetryResponse(response);
+      } catch (error) {
+        if (
+          attempt >= DEPLOY_WORKFLOW_READBACK_RETRY_ATTEMPTS ||
+          !isRetryableDeployWorkflowReadbackError(error) ||
+          deployWorkflowReadbackSignalAborted(init)
+        ) {
+          throw error;
+        }
+        emitDeployWorkflowReadbackRetryProgress(options.progress, {
+          method: request.method,
+          pathLabel: request.pathLabel,
+          reason: `failed ${safeErrorMessage(error)}`,
+          nextAttempt: attempt + 1
+        });
+      }
+
+      await sleepImpl(DEPLOY_WORKFLOW_READBACK_RETRY_DELAYS_MS[attempt - 1] ?? DEPLOY_WORKFLOW_READBACK_RETRY_DELAYS_MS.at(-1)!);
+    }
+
+    throw new Error(`Relay readback failed after ${DEPLOY_WORKFLOW_READBACK_RETRY_ATTEMPTS} attempts: ${request.method} ${request.pathLabel}`);
+  };
+}
+
+function deployWorkflowReadbackRequest(
+  resource: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1] | undefined
+): { method: string; pathLabel: string } | undefined {
+  const method = fetchRequestMethod(resource, init);
+  if (method !== "GET") return undefined;
+  const url = fetchRequestUrl(resource);
+  if (!url) return undefined;
+  if (DEPLOYMENT_INTENT_READBACK_PATH.test(url.pathname)) {
+    return { method, pathLabel: "/v1/deployment-intents/:id" };
+  }
+  if (DEPLOYMENT_INTENT_GROUP_READBACK_PATH.test(url.pathname)) {
+    return { method, pathLabel: "/v1/deployment-intent-groups/:id" };
+  }
+  return undefined;
+}
+
+function fetchRequestMethod(resource: Parameters<typeof fetch>[0], init: Parameters<typeof fetch>[1] | undefined): string {
+  if (typeof init?.method === "string" && init.method.length > 0) {
+    return init.method.toUpperCase();
+  }
+  const method = (resource as { method?: unknown }).method;
+  return typeof method === "string" && method.length > 0 ? method.toUpperCase() : "GET";
+}
+
+function fetchRequestUrl(resource: Parameters<typeof fetch>[0]): URL | undefined {
+  try {
+    if (resource instanceof URL) return resource;
+    if (typeof resource === "string") return new URL(resource);
+    const url = (resource as { url?: unknown }).url;
+    return typeof url === "string" ? new URL(url) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isRetryableDeployWorkflowReadbackStatus(status: number): boolean {
+  return status === 502 || status === 503 || status === 504;
+}
+
+function isRetryableDeployWorkflowReadbackError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if (error.message.startsWith("Relay readback failed after ")) return true;
+  return error instanceof TypeError ||
+    error.name === "TimeoutError" ||
+    error.name === "AbortError" ||
+    /fetch failed|network|ECONNRESET|ETIMEDOUT|EAI_AGAIN/i.test(error.message);
+}
+
+function deployWorkflowReadbackSignalAborted(init: Parameters<typeof fetch>[1] | undefined): boolean {
+  return Boolean(init?.signal?.aborted);
+}
+
+async function drainRetryResponse(response: Response): Promise<void> {
+  await response.arrayBuffer().catch(() => undefined);
+}
+
+function emitDeployWorkflowReadbackRetryProgress(
+  progress: CliRuntime["progress"],
+  input: { method: string; pathLabel: string; reason: string; nextAttempt: number }
+): void {
+  progress?.({
+    type: "wait",
+    step: "relay_readback",
+    detail: `${input.method} ${input.pathLabel} ${input.reason}; retrying ${input.nextAttempt}/${DEPLOY_WORKFLOW_READBACK_RETRY_ATTEMPTS}`
+  });
 }
 
 function deployWorkflowQuoteCapAmount(flags: Map<string, string | boolean>): string | undefined {
@@ -5795,7 +5960,8 @@ async function deployWorkflowResumeCommand(flags: Map<string, string | boolean>,
   const runDir = deployWorkflowRunDir(loaded);
   const workflowStore = deployWorkflowStoreForDir(runDir);
   const workflow = new SwitchboardDeployWorkflow(snapshot.input, deployWorkflowAdapters(snapshot.input, workflowStore, {
-    helperEnv: contextRuntimeEnv(runtime)
+    helperEnv: contextRuntimeEnv(runtime),
+    progress: runtime.progress
   }), snapshot);
   const resumeEnv = deployWorkflowResumeEnv(snapshot, loaded, runtime, runDir);
 
@@ -7167,6 +7333,35 @@ function emitRunContextProgress(runtime: CliRuntime, workflowId: string | undefi
   });
 }
 
+function emitCapacitySelectedProgress(runtime: CliRuntime, snapshot: SwitchboardDeployWorkflowSnapshot): number {
+  if (snapshot.input.deploymentMode === "group") {
+    const group = snapshot.input.group;
+    const processors = group?.members
+      .map((member) => member.processor ?? member.processorId)
+      .filter((processor): processor is string => Boolean(processor)) ?? [];
+    runtime.progress?.({
+      type: "selected-processors",
+      processors,
+      replicas: group?.expectedReplicas ?? processors.length,
+      minReady: group?.minReady
+    });
+    return snapshot.events.length;
+  }
+
+  const capacity = {
+    ...recordValue(snapshot.input.capacity),
+    ...recordValue(snapshot.data.capacity)
+  };
+  const pins = recordValue(snapshot.input.pins);
+  const processor =
+    stringRecordField(capacity, "processor") ??
+    stringRecordField(capacity, "processorId") ??
+    stringRecordField(pins, "processor") ??
+    stringRecordField(pins, "processorId");
+  runtime.progress?.({ type: "selected-processor", processor });
+  return snapshot.events.length;
+}
+
 function emitWorkflowSnapshotProgress(
   progress: CliRuntime["progress"] | undefined,
   snapshot: SwitchboardDeployWorkflowSnapshot,
@@ -7326,13 +7521,14 @@ async function runDeployWorkflowCompatibilityRunner(input: {
   action: "launch-demo" | "deploy";
   json: boolean;
   workDir?: string;
+  emittedEventCount?: number;
 }): Promise<{
   report: Record<string, any>;
   reportPath: string;
   workflowSnapshot: SwitchboardDeployWorkflowSnapshot;
 }> {
   const deployActionSnapshot = await input.workflow.runToBlocked();
-  let emittedEventCount = emitWorkflowSnapshotProgress(input.runtime.progress, deployActionSnapshot);
+  let emittedEventCount = emitWorkflowSnapshotProgress(input.runtime.progress, deployActionSnapshot, input.emittedEventCount);
   const deployAction = requireDeployWorkflowAcurastAction(deployActionSnapshot);
   const submit = await submitAcurastSingleReplicaWithSdk({
     actionPayload: deployAction.payload as AcurastSdkSubmitActionPayload,
@@ -7386,13 +7582,14 @@ async function runDeployWorkflowGroupRunner(input: {
   action: "launch-demo" | "deploy";
   json: boolean;
   workDir?: string;
+  emittedEventCount?: number;
 }): Promise<{
   report: Record<string, any>;
   reportPath: string;
   workflowSnapshot: SwitchboardDeployWorkflowSnapshot;
 }> {
   const deployActionSnapshot = await input.workflow.runToBlocked();
-  let emittedEventCount = emitWorkflowSnapshotProgress(input.runtime.progress, deployActionSnapshot);
+  let emittedEventCount = emitWorkflowSnapshotProgress(input.runtime.progress, deployActionSnapshot, input.emittedEventCount);
   const deployAction = requireDeployWorkflowAcurastAction(deployActionSnapshot);
   const submit = await submitAcurastGroupWithSdk({
     actionPayload: deployAction.payload as AcurastSdkGroupSubmitActionPayload,
@@ -7491,6 +7688,7 @@ async function deployCommand(flags: Map<string, string | boolean>, runtime: CliR
   const routeActivationMode = "relay-reconciled";
   let selection: LaunchDemoCapacitySelection | undefined;
   if (routeActivationMode === "relay-reconciled" && (explicitOperatorId || explicitGatewayId || explicitProcessor)) {
+    runtime.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
     selection = await selectDeployCapacity({
       relayUrl,
       relayUrls,
@@ -7501,6 +7699,7 @@ async function deployCommand(flags: Map<string, string | boolean>, runtime: CliR
       requiredModules: requiredAcurastModules
     });
   } else if (!explicitOperatorId) {
+    runtime.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
     selection = await selectLaunchDemoCapacity({
         relayUrl,
         relayUrls,
@@ -7634,15 +7833,12 @@ async function deployCommand(flags: Map<string, string | boolean>, runtime: CliR
   });
   const workflowStore = deployWorkflowStore(flags);
   const workflow = new SwitchboardDeployWorkflow(workflowInput, deployWorkflowAdapters(workflowInput, workflowStore, {
-    helperEnv: contextRuntimeEnv(runtime)
+    helperEnv: contextRuntimeEnv(runtime),
+    progress: runtime.progress
   }));
   const capacitySnapshot = await workflow.advanceOnce();
   emitRunContextProgress(runtime, capacitySnapshot.workflowId, operationRelayUrl);
-  runtime.progress?.({ type: "selected-processor", processor: childEnv.SWITCHBOARD_DEPLOY_PROCESSOR });
-  runtime.progress?.({
-    type: "deployment-intent",
-    intentId: stringRecordField(recordValue(capacitySnapshot.data.deploymentIntent), "intentId")
-  });
+  const emittedEventCount = emitCapacitySelectedProgress(runtime, capacitySnapshot);
   if (boolFlag(flags, "dry-run")) {
     const output = {
       ok: true,
@@ -7704,7 +7900,8 @@ async function deployCommand(flags: Map<string, string | boolean>, runtime: CliR
     runtime,
     action: "deploy",
     json: boolFlag(flags, "json"),
-    workDir: runtime.projectRoot
+    workDir: runtime.projectRoot,
+    emittedEventCount
   });
   const output = deployOutput(report, reportPath, {
     relayUrl: operationRelayUrl,
@@ -9242,6 +9439,7 @@ function printLaunchDemoStart(input: {
   estimate: { ok: true; summary?: string } | { ok: false; error: string };
   minReadyProcessors: number;
 }) {
+  console.log("");
   console.log(sectionTitle("Switchboard demo"));
   printOutputRows([
     { label: "Network", value: `${input.target} / Acurast ${input.acurastNetwork}` },
@@ -9276,6 +9474,7 @@ function printProjectDeployStart(input: {
   routeActivationMode: string;
   certificateMode: string;
 }) {
+  console.log("");
   console.log(sectionTitle("Switchboard deploy"));
   printOutputRows([
     { label: "Network", value: input.target },
