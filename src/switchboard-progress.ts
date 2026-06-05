@@ -69,7 +69,7 @@ export function createSwitchboardDeployProgressReporter(input: {
   const env = input.env ?? process.env;
   const waitIntervalMs = positiveInteger(
     env.SWITCHBOARD_DEPLOY_WAIT_LOG_INTERVAL_MS,
-    60_000
+    30_000
   );
 
   console.log("");
@@ -139,7 +139,7 @@ function logProgressEvent(
     state.preparedJobLines.add(key);
   }
   if (line.status === "wait") {
-    const key = `${line.label}:${line.detail ?? ""}`;
+    const key = waitThrottleKey(line);
     const now = Date.now();
     const last = state.lastWaitAt.get(key) ?? 0;
     if (last !== 0 && now - last < waitIntervalMs) return;
@@ -421,8 +421,12 @@ function waitProgressLine(
   switch (step) {
     case "capacity_selection":
       return undefined;
-    case "deploy_submitted":
-      return { status: "wait", label: "Job start", detail: jobStartWaitDetail(schedule), section: section ?? "Switchboard Runner" };
+    case "deploy_submitted": {
+      const jobStartDetail = jobStartWaitDetail(schedule);
+      return jobStartDetail
+        ? { status: "wait", label: "Job start", detail: jobStartDetail, section: section ?? "Switchboard Runner" }
+        : undefined;
+    }
     case "runtime_claimed":
       return { status: "wait", label: "Quote", detail: detail ?? "waiting for ingress quote", section: section ?? "Switchboard Runner" };
     case "quote_ready":
@@ -442,11 +446,11 @@ function waitProgressLine(
   }
 }
 
-function jobStartWaitDetail(schedule: Record<string, unknown> | undefined): string {
+function jobStartWaitDetail(schedule: Record<string, unknown> | undefined): string | undefined {
   const summary = deployScheduleSummary(recordValue(schedule), {});
   const now = Date.now();
   if (summary?.startMs !== undefined && now < summary.startMs) {
-    return `waiting for job to start in ${formatProgressDuration(summary.startMs - now)}`;
+    return undefined;
   }
   if (summary?.latestStartMs !== undefined && now > summary.latestStartMs) {
     return "past max-start; waiting for job to start";
@@ -455,6 +459,23 @@ function jobStartWaitDetail(schedule: Record<string, unknown> | undefined): stri
     return `waiting for job to start; max-start in ${formatProgressDuration(summary.latestStartMs - now)}`;
   }
   return "waiting for job to start";
+}
+
+function waitThrottleKey(line: ProgressLine): string {
+  if (line.label !== "Job start") {
+    return `${line.label}:${line.detail ?? ""}`;
+  }
+  return `${line.label}:${jobStartWaitPhase(line.detail)}`;
+}
+
+function jobStartWaitPhase(detail: string | undefined): string {
+  if (detail?.startsWith("waiting for job to start; max-start in ")) {
+    return "after-start";
+  }
+  if (detail === "past max-start; waiting for job to start") {
+    return "past-max-start";
+  }
+  return detail ?? "";
 }
 
 function logProgressLine(

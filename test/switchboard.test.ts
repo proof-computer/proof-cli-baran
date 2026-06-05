@@ -1596,8 +1596,8 @@ test("forwards native deploy args to the local Switchboard runner", async () => 
 });
 
 test("emits native deploy progress from proof runner events", async () => {
-  const futureSchedule = {
-    startTime: Date.now() + 180_000,
+  const startedSchedule = {
+    startTime: Date.now() - 10_000,
     maxStartDelay: 300_000
   };
   const captured = await captureConsole(async () => runSwitchboardDeployNative([
@@ -1643,7 +1643,7 @@ test("emits native deploy progress from proof runner events", async () => {
       });
       options?.progress?.({ type: "acurast-sdk", sdkStatus: "Submit", data: { txHash: "0xdeploy" } });
       options?.progress?.({ type: "workflow", event: "deploy_action_submitted", details: { deploymentId: "59420" } });
-      options?.progress?.({ type: "wait", step: "deploy_submitted", schedule: futureSchedule });
+      options?.progress?.({ type: "wait", step: "deploy_submitted", schedule: startedSchedule });
       options?.progress?.({ type: "acurast-sdk", sdkStatus: "Acknowledged", data: { acknowledged: 1 } });
       options?.progress?.({ type: "acurast-sdk", sdkStatus: "EnvironmentVariablesSet", data: { hash: "0xenv" } });
       options?.progress?.({ type: "wait", step: "relay_readback", detail: "GET /v1/deployment-intents/:id returned 502; retrying 2/4" });
@@ -1674,7 +1674,8 @@ test("emits native deploy progress from proof runner events", async () => {
   assert.match(captured.stdout, /Submitted to Acurast/);
   assert.match(captured.stdout, /Acurast SDK acknowledged processors/);
   assert.match(captured.stdout, /Acurast SDK set environment/);
-  assert.match(captured.stdout, /\[\.\.\] Job start: waiting for job to start in/);
+  assert.match(captured.stdout, /\[\.\.\] Job start: waiting for job to start; max-start in/);
+  assert.doesNotMatch(captured.stdout, /Job start: waiting for job to start in/);
   assert.doesNotMatch(captured.stdout, /Runtime claim:/);
   assert.match(captured.stdout, /Relay readback/);
   assert.match(captured.stdout, /Job claimed runtime/);
@@ -1848,9 +1849,55 @@ test("keeps native launch-demo json output free of progress text", async () => {
   assert.deepEqual(JSON.parse(captured.stdout), { ok: true, action: "launch-demo" });
 });
 
+test("suppresses pre-start job polling and throttles job-start waits", async () => {
+  const originalDateNow = Date.now;
+  const startTime = 1_800_000_060_000;
+  const schedule = {
+    startTime,
+    maxStartDelay: 120_000
+  };
+  let now = startTime - 60_000;
+
+  const captured = await (async () => {
+    Date.now = () => now;
+    try {
+      return await captureConsole(async () => runSwitchboardLaunchDemoNative(["--yes-spend"], {
+        runner: async (_argv, options) => {
+          options?.progress?.({ type: "acurast-sdk", sdkStatus: "EnvironmentVariablesSet", data: { hash: "0xenv" } });
+          options?.progress?.({ type: "wait", step: "deploy_submitted", schedule });
+
+          now = startTime;
+          options?.progress?.({ type: "wait", step: "deploy_submitted", schedule });
+
+          now += 10_000;
+          options?.progress?.({ type: "wait", step: "deploy_submitted", schedule });
+
+          now += 20_000;
+          options?.progress?.({ type: "wait", step: "deploy_submitted", schedule });
+
+          now = startTime + 120_001;
+          options?.progress?.({ type: "wait", step: "deploy_submitted", schedule });
+
+          now += 10_000;
+          options?.progress?.({ type: "wait", step: "deploy_submitted", schedule });
+        }
+      }));
+    } finally {
+      Date.now = originalDateNow;
+    }
+  })();
+
+  assert.equal(captured.result, 0);
+  assert.doesNotMatch(captured.stdout, /Job start: waiting for job to start in/);
+  assert.match(captured.stdout, /Job start: waiting for job to start; max-start in 2m/);
+  assert.match(captured.stdout, /Job start: waiting for job to start; max-start in 1m 30s/);
+  assert.match(captured.stdout, /Job start: past max-start; waiting for job to start/);
+  assert.equal(matchCount(captured.stdout, /Job start:/g), 3);
+});
+
 test("emits native launch-demo progress from proof runner events", async () => {
-  const futureSchedule = {
-    startTime: Date.now() + 180_000,
+  const startedSchedule = {
+    startTime: Date.now() - 10_000,
     maxStartDelay: 300_000
   };
   const captured = await captureConsole(async () => runSwitchboardLaunchDemoNative([
@@ -1868,7 +1915,7 @@ test("emits native launch-demo progress from proof runner events", async () => {
       options?.progress?.({ type: "workflow", event: "intent_created", details: { intentId: "di_demo" } });
       options?.progress?.({ type: "acurast-sdk", sdkStatus: "Uploaded", data: { ipfsHash: "bafydemo" } });
       options?.progress?.({ type: "workflow", event: "deploy_action_submitted", details: { deploymentId: "59421" } });
-      options?.progress?.({ type: "wait", step: "deploy_submitted", schedule: futureSchedule });
+      options?.progress?.({ type: "wait", step: "deploy_submitted", schedule: startedSchedule });
       options?.progress?.({ type: "acurast-sdk", sdkStatus: "Acknowledged", data: { acknowledged: 1 } });
       options?.progress?.({ type: "acurast-sdk", sdkStatus: "EnvironmentVariablesSet", data: { hash: "0xenvdemo" } });
       options?.progress?.({ type: "workflow", event: "runtime_claimed", details: { runtimeSigner: `0x${"33".repeat(32)}` } });
@@ -1895,7 +1942,8 @@ test("emits native launch-demo progress from proof runner events", async () => {
   assert.match(captured.stdout, /Submitted to Acurast/);
   assert.match(captured.stdout, /Acurast SDK acknowledged processors/);
   assert.match(captured.stdout, /Acurast SDK set environment/);
-  assert.match(captured.stdout, /\[\.\.\] Job start: waiting for job to start in/);
+  assert.match(captured.stdout, /\[\.\.\] Job start: waiting for job to start; max-start in/);
+  assert.doesNotMatch(captured.stdout, /Job start: waiting for job to start in/);
   assert.doesNotMatch(captured.stdout, /Runtime claim:/);
   assert.match(captured.stdout, /Job claimed runtime/);
   assert.match(captured.stdout, /Quote ready/);
