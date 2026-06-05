@@ -8,16 +8,64 @@ importers:
 
   .:
     dependencies:
+      '@acurast/sdk':
+        specifier: 1.2.1
+        version: 1.2.1(@polkadot/api-augment@16.5.6)(@polkadot/api@16.5.6)(@polkadot/keyring@14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3))(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))
+      '@clack/prompts':
+        specifier: ^1.3.0
+        version: 1.4.0
       '@oclif/core':
         specifier: ^4.11.3
         version: 4.11.3
-      '@proof-computer/switchboard-cli':
-        specifier: 0.2.1
-        version: 0.2.1(@ledgerhq/hw-transport-node-hid-singleton@6.31.5)(@polkadot/api-augment@16.5.6)(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))(@zondax/ledger-substrate@1.1.1)
+      '@polkadot/api':
+        specifier: ^16.5.6
+        version: 16.5.6
+      '@polkadot/keyring':
+        specifier: ^14.0.3
+        version: 14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)
+      '@polkadot/util':
+        specifier: ^14.0.3
+        version: 14.0.3
+      '@polkadot/util-crypto':
+        specifier: ^14.0.3
+        version: 14.0.3(@polkadot/util@14.0.3)
+      '@proofcomputer/switchboard-sdk':
+        specifier: github:proof-computer/switchboard-sdk#v0.1.4
+        version: https://codeload.github.com/proof-computer/switchboard-sdk/tar.gz/d6b02cf1a3298a486d7828c9b9122c1e94f189dd
+      acme-client:
+        specifier: ^5.4.0
+        version: 5.4.0
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      esbuild:
+        specifier: ^0.28.0
+        version: 0.28.0
+      ethers:
+        specifier: ^6.15.0
+        version: 6.16.0
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      solc:
+        specifier: ^0.8.30
+        version: 0.8.35
+      zod:
+        specifier: ^4.1.12
+        version: 4.4.3
     devDependencies:
+      '@ledgerhq/hw-transport-node-hid-singleton':
+        specifier: 6.31.5
+        version: 6.31.5
+      '@types/express':
+        specifier: ^5.0.6
+        version: 5.0.6
       '@types/node':
         specifier: ^24.10.1
         version: 24.12.4
+      '@zondax/ledger-substrate':
+        specifier: 1.1.1
+        version: 1.1.1
       oclif:
         specifier: ^4.23.7
         version: 4.23.7(@types/node@24.12.4)
@@ -30,8 +78,8 @@ importers:
 
 packages:
 
-  '@acurast/sdk@1.2.0':
-    resolution: {integrity: sha512-iyCpMSghW2dj346p73x2OqqV0b0KfhMGLlhUUbFXa2RFUrIqIXXkGTYShn7z/A90ZiAMM+b1elhC863WphjB/Q==}
+  '@acurast/sdk@1.2.1':
+    resolution: {integrity: sha512-1POEojccrrHh6WZ6Q98h7zXsmoIcmAVyO+XY8VXuJ71434NhRqjAXiYZETWlJS+Sqje5INjv1zLLTRLs0TTrUg==}
     peerDependencies:
       '@polkadot/api': ^16.1.2
       '@polkadot/api-augment': ^16.1.2
@@ -767,18 +815,10 @@ packages:
     resolution: {integrity: sha512-tOPdkMye3iuXnuFtdNg5+iSu7Cz9LRL8z5psMuZpUpThMYChGsS2pDFtNvXOKU8ohhO+frY9VdJ9VBg1WL9Iug==}
     engines: {node: '>=18'}
 
-  '@proof-computer/switchboard-cli@0.2.1':
-    resolution: {integrity: sha512-osPot1PN5LKzLyY9YcGRKcSWcQQBLfwpS6duWmsX9YoTMOwuwqwLY8/C+MLfYgmbYQI9Dr9tSvfcNsxa00vI8w==}
-    engines: {node: '>=22'}
-    hasBin: true
-    peerDependencies:
-      '@ledgerhq/hw-transport-node-hid-singleton': 6.31.5
-      '@zondax/ledger-substrate': 1.1.1
-    peerDependenciesMeta:
-      '@ledgerhq/hw-transport-node-hid-singleton':
-        optional: true
-      '@zondax/ledger-substrate':
-        optional: true
+  '@proofcomputer/switchboard-sdk@https://codeload.github.com/proof-computer/switchboard-sdk/tar.gz/d6b02cf1a3298a486d7828c9b9122c1e94f189dd':
+    resolution: {tarball: https://codeload.github.com/proof-computer/switchboard-sdk/tar.gz/d6b02cf1a3298a486d7828c9b9122c1e94f189dd}
+    version: 0.1.4
+    engines: {node: '>=20'}
 
   '@scure/base@1.2.6':
     resolution: {integrity: sha512-g/nm5FgUa//MCj1gV09zTJTaM6KBAHqLN907YVQqf7zC49+DcO4B1so4ZX07Ef10Twr6nuqYEH9GEggFXA4Fmg==}
@@ -851,8 +891,23 @@ packages:
   '@types/bn.js@5.2.0':
     resolution: {integrity: sha512-DLbJ1BPqxvQhIGbeu8VbUC1DiAiahHtAYvA0ZEAa4P31F7IaArc8z3C3BRQdWX4mtLQuABG4yzp76ZrS02Ui1Q==}
 
+  '@types/body-parser@1.19.6':
+    resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
+
+  '@types/connect@3.4.38':
+    resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
+
+  '@types/express-serve-static-core@5.1.1':
+    resolution: {integrity: sha512-v4zIMr/cX7/d2BpAEX3KNKL/JrT1s43s96lLvvdTmza1oEvDudCqK9aF/djc/SWgy8Yh0h30TZx5VpzqFCxk5A==}
+
+  '@types/express@5.0.6':
+    resolution: {integrity: sha512-sKYVuV7Sv9fbPIt/442koC7+IIwK5olP1KWeD88e/idgoJqDm3JV/YUiPwkoKK92ylff2MGxSz1CSjsXelx0YA==}
+
   '@types/http-cache-semantics@4.2.0':
     resolution: {integrity: sha512-L3LgimLHXtGkWikKnsPg0/VFx9OGZaC+eN1u4r+OB1XRqH3meBIAVC2zr1WdMH+RHmnRkqliQAOHNJ/E0j/e0Q==}
+
+  '@types/http-errors@2.0.5':
+    resolution: {integrity: sha512-r8Tayk8HJnX0FztbZN7oVqGccWgw98T/0neJphO91KkmOzug1KkofZURD4UaD5uH8AqcFLfdPErnBod0u71/qg==}
 
   '@types/mute-stream@0.0.4':
     resolution: {integrity: sha512-CPM9nzrCPPJHQNA9keH9CVkVI+WR5kMa+7XEs5jcGQ0VoAGnLv242w8lIVgwAEfmE4oufJRaTc9PNLQl0ioAow==}
@@ -865,6 +920,18 @@ packages:
 
   '@types/node@24.12.4':
     resolution: {integrity: sha512-GUUEShf+PBCGW2KaXwcIt3Yk+e3pkKwWKb9GSyM9WQVE+ep2jzmHdGsHzu4wgcZy5fN9FBdVzjpBQsYlpfpgLA==}
+
+  '@types/qs@6.15.1':
+    resolution: {integrity: sha512-GZHUBZR9hckSUhrxmp1nG6NwdpM9fCunJwyThLW1X3AyHgd9IlHb6VANpQQqDr2o/qQp6McZ3y/IA2rVzKzSbw==}
+
+  '@types/range-parser@1.2.7':
+    resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}
+
+  '@types/send@1.2.1':
+    resolution: {integrity: sha512-arsCikDvlU99zl1g69TcAB3mzZPpxgw0UQnaHeC1Nwb015xp8bknZv5rIfri9xTOcMuaVgvabfIRA7PSZVuZIQ==}
+
+  '@types/serve-static@2.2.0':
+    resolution: {integrity: sha512-8mam4H1NHLtu7nmtalF7eyBH14QyOASmcxHhSfEoRyr0nP/YdoesEtU+uSRvMe96TW/HPTtkoKqQLl53N7UXMQ==}
 
   '@types/w3c-web-usb@1.0.14':
     resolution: {integrity: sha512-Qu3Nn6JFuF4+sHKYl+IcX9vYiI40ogleXzFFSxoE1W94rG98o/kXs8uJ0QSfFzuwBCZWlGfUGpPkgwuuX4PchA==}
@@ -2041,7 +2108,7 @@ packages:
 
 snapshots:
 
-  '@acurast/sdk@1.2.0(@polkadot/api-augment@16.5.6)(@polkadot/api@16.5.6)(@polkadot/keyring@14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3))(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))':
+  '@acurast/sdk@1.2.1(@polkadot/api-augment@16.5.6)(@polkadot/api@16.5.6)(@polkadot/keyring@14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3))(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))':
     dependencies:
       '@polkadot/api': 16.5.6
       '@polkadot/api-augment': 16.5.6
@@ -2603,7 +2670,6 @@ snapshots:
       '@ledgerhq/logs': 6.17.0
       rxjs: 7.8.2
       semver: 7.7.3
-    optional: true
 
   '@ledgerhq/devices@8.5.0':
     dependencies:
@@ -2611,10 +2677,8 @@ snapshots:
       '@ledgerhq/logs': 6.17.0
       rxjs: 7.8.2
       semver: 7.8.0
-    optional: true
 
-  '@ledgerhq/errors@6.35.0':
-    optional: true
+  '@ledgerhq/errors@6.35.0': {}
 
   '@ledgerhq/hw-transport-node-hid-noevents@6.35.2':
     dependencies:
@@ -2623,7 +2687,6 @@ snapshots:
       '@ledgerhq/hw-transport': 6.35.2
       '@ledgerhq/logs': 6.17.0
       node-hid: 2.1.2
-    optional: true
 
   '@ledgerhq/hw-transport-node-hid-singleton@6.31.5':
     dependencies:
@@ -2634,7 +2697,6 @@ snapshots:
       '@ledgerhq/logs': 6.17.0
       node-hid: 2.1.2
       usb: 2.9.0
-    optional: true
 
   '@ledgerhq/hw-transport@6.31.4':
     dependencies:
@@ -2642,7 +2704,6 @@ snapshots:
       '@ledgerhq/errors': 6.35.0
       '@ledgerhq/logs': 6.17.0
       events: 3.3.0
-    optional: true
 
   '@ledgerhq/hw-transport@6.31.9':
     dependencies:
@@ -2650,7 +2711,6 @@ snapshots:
       '@ledgerhq/errors': 6.35.0
       '@ledgerhq/logs': 6.17.0
       events: 3.3.0
-    optional: true
 
   '@ledgerhq/hw-transport@6.35.2':
     dependencies:
@@ -2658,10 +2718,8 @@ snapshots:
       '@ledgerhq/errors': 6.35.0
       '@ledgerhq/logs': 6.17.0
       events: 3.3.0
-    optional: true
 
-  '@ledgerhq/logs@6.17.0':
-    optional: true
+  '@ledgerhq/logs@6.17.0': {}
 
   '@noble/curves@1.2.0':
     dependencies:
@@ -3144,31 +3202,16 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@proof-computer/switchboard-cli@0.2.1(@ledgerhq/hw-transport-node-hid-singleton@6.31.5)(@polkadot/api-augment@16.5.6)(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))(@zondax/ledger-substrate@1.1.1)':
+  '@proofcomputer/switchboard-sdk@https://codeload.github.com/proof-computer/switchboard-sdk/tar.gz/d6b02cf1a3298a486d7828c9b9122c1e94f189dd':
     dependencies:
-      '@acurast/sdk': 1.2.0(@polkadot/api-augment@16.5.6)(@polkadot/api@16.5.6)(@polkadot/keyring@14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3))(@polkadot/types-codec@16.5.6)(@polkadot/types@16.5.6)(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)(@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.3)(@polkadot/x-randomvalues@14.0.3(@polkadot/util@14.0.3)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.3))))
-      '@clack/prompts': 1.4.0
-      '@polkadot/api': 16.5.6
       '@polkadot/keyring': 14.0.3(@polkadot/util-crypto@14.0.3(@polkadot/util@14.0.3))(@polkadot/util@14.0.3)
       '@polkadot/util': 14.0.3
       '@polkadot/util-crypto': 14.0.3(@polkadot/util@14.0.3)
       acme-client: 5.4.0
-      dotenv: 17.4.2
-      esbuild: 0.28.0
       ethers: 6.16.0
-      express: 5.2.1
-      solc: 0.8.35
       zod: 4.4.3
-    optionalDependencies:
-      '@ledgerhq/hw-transport-node-hid-singleton': 6.31.5
-      '@zondax/ledger-substrate': 1.1.1
     transitivePeerDependencies:
-      - '@polkadot/api-augment'
-      - '@polkadot/types'
-      - '@polkadot/types-codec'
-      - '@polkadot/wasm-crypto'
       - bufferutil
-      - debug
       - supports-color
       - utf-8-validate
 
@@ -3268,7 +3311,31 @@ snapshots:
     dependencies:
       '@types/node': 24.12.4
 
+  '@types/body-parser@1.19.6':
+    dependencies:
+      '@types/connect': 3.4.38
+      '@types/node': 24.12.4
+
+  '@types/connect@3.4.38':
+    dependencies:
+      '@types/node': 24.12.4
+
+  '@types/express-serve-static-core@5.1.1':
+    dependencies:
+      '@types/node': 24.12.4
+      '@types/qs': 6.15.1
+      '@types/range-parser': 1.2.7
+      '@types/send': 1.2.1
+
+  '@types/express@5.0.6':
+    dependencies:
+      '@types/body-parser': 1.19.6
+      '@types/express-serve-static-core': 5.1.1
+      '@types/serve-static': 2.2.0
+
   '@types/http-cache-semantics@4.2.0': {}
+
+  '@types/http-errors@2.0.5': {}
 
   '@types/mute-stream@0.0.4':
     dependencies:
@@ -3286,15 +3353,26 @@ snapshots:
     dependencies:
       undici-types: 7.16.0
 
-  '@types/w3c-web-usb@1.0.14':
-    optional: true
+  '@types/qs@6.15.1': {}
+
+  '@types/range-parser@1.2.7': {}
+
+  '@types/send@1.2.1':
+    dependencies:
+      '@types/node': 24.12.4
+
+  '@types/serve-static@2.2.0':
+    dependencies:
+      '@types/http-errors': 2.0.5
+      '@types/node': 24.12.4
+
+  '@types/w3c-web-usb@1.0.14': {}
 
   '@types/wrap-ansi@3.0.0': {}
 
   '@zondax/ledger-js@1.3.1':
     dependencies:
       '@ledgerhq/hw-transport': 6.31.9
-    optional: true
 
   '@zondax/ledger-substrate@1.1.1':
     dependencies:
@@ -3304,7 +3382,6 @@ snapshots:
     transitivePeerDependencies:
       - debug
       - supports-color
-    optional: true
 
   accepts@2.0.0:
     dependencies:
@@ -3371,22 +3448,19 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  base64-js@1.5.1:
-    optional: true
+  base64-js@1.5.1: {}
 
   bignumber.js@9.3.1: {}
 
   bindings@1.5.0:
     dependencies:
       file-uri-to-path: 1.0.0
-    optional: true
 
   bl@4.1.0:
     dependencies:
       buffer: 5.7.1
       inherits: 2.0.4
       readable-stream: 3.6.2
-    optional: true
 
   bn.js@4.12.3: {}
 
@@ -3426,7 +3500,6 @@ snapshots:
     dependencies:
       base64-js: 1.5.1
       ieee754: 1.2.1
-    optional: true
 
   bytes@3.1.2: {}
 
@@ -3480,8 +3553,7 @@ snapshots:
 
   chardet@2.1.1: {}
 
-  chownr@1.1.4:
-    optional: true
+  chownr@1.1.4: {}
 
   clean-stack@3.0.1:
     dependencies:
@@ -3538,8 +3610,7 @@ snapshots:
     dependencies:
       mimic-response: 3.1.0
 
-  deep-extend@0.6.0:
-    optional: true
+  deep-extend@0.6.0: {}
 
   defer-to-connect@2.0.1: {}
 
@@ -3549,8 +3620,7 @@ snapshots:
 
   detect-indent@7.0.2: {}
 
-  detect-libc@2.1.2:
-    optional: true
+  detect-libc@2.1.2: {}
 
   detect-newline@4.0.1: {}
 
@@ -3590,7 +3660,6 @@ snapshots:
   end-of-stream@1.4.5:
     dependencies:
       once: 1.4.0
-    optional: true
 
   error-ex@1.3.4:
     dependencies:
@@ -3661,11 +3730,9 @@ snapshots:
 
   eventemitter3@5.0.4: {}
 
-  events@3.3.0:
-    optional: true
+  events@3.3.0: {}
 
-  expand-template@2.0.3:
-    optional: true
+  expand-template@2.0.3: {}
 
   express@5.2.1:
     dependencies:
@@ -3737,8 +3804,7 @@ snapshots:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
 
-  file-uri-to-path@1.0.0:
-    optional: true
+  file-uri-to-path@1.0.0: {}
 
   filelist@1.0.6:
     dependencies:
@@ -3785,8 +3851,7 @@ snapshots:
 
   fresh@2.0.0: {}
 
-  fs-constants@1.0.0:
-    optional: true
+  fs-constants@1.0.0: {}
 
   fs-extra@8.1.0:
     dependencies:
@@ -3825,8 +3890,7 @@ snapshots:
 
   git-hooks-list@3.2.0: {}
 
-  github-from-package@0.0.0:
-    optional: true
+  github-from-package@0.0.0: {}
 
   github-slugger@2.0.0: {}
 
@@ -3919,8 +3983,7 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
-  ieee754@1.2.1:
-    optional: true
+  ieee754@1.2.1: {}
 
   indent-string@4.0.0: {}
 
@@ -4025,11 +4088,9 @@ snapshots:
     dependencies:
       brace-expansion: 2.1.0
 
-  minimist@1.2.8:
-    optional: true
+  minimist@1.2.8: {}
 
-  mkdirp-classic@0.5.3:
-    optional: true
+  mkdirp-classic@0.5.3: {}
 
   mock-socket@9.3.1: {}
 
@@ -4039,8 +4100,7 @@ snapshots:
 
   mute-stream@2.0.0: {}
 
-  napi-build-utils@2.0.0:
-    optional: true
+  napi-build-utils@2.0.0: {}
 
   negotiator@1.0.0: {}
 
@@ -4060,13 +4120,10 @@ snapshots:
   node-abi@3.92.0:
     dependencies:
       semver: 7.8.0
-    optional: true
 
-  node-addon-api@3.2.1:
-    optional: true
+  node-addon-api@3.2.1: {}
 
-  node-addon-api@6.1.0:
-    optional: true
+  node-addon-api@6.1.0: {}
 
   node-domexception@1.0.0: {}
 
@@ -4078,15 +4135,13 @@ snapshots:
 
   node-forge@1.4.0: {}
 
-  node-gyp-build@4.8.4:
-    optional: true
+  node-gyp-build@4.8.4: {}
 
   node-hid@2.1.2:
     dependencies:
       bindings: 1.5.0
       node-addon-api: 3.2.1
       prebuild-install: 7.1.3
-    optional: true
 
   normalize-package-data@6.0.2:
     dependencies:
@@ -4186,7 +4241,6 @@ snapshots:
       simple-get: 4.0.1
       tar-fs: 2.1.4
       tunnel-agent: 0.6.0
-    optional: true
 
   propagate@2.0.1: {}
 
@@ -4203,7 +4257,6 @@ snapshots:
     dependencies:
       end-of-stream: 1.4.5
       once: 1.4.0
-    optional: true
 
   pvtsutils@1.3.6:
     dependencies:
@@ -4232,14 +4285,12 @@ snapshots:
       ini: 1.3.8
       minimist: 1.2.8
       strip-json-comments: 2.0.1
-    optional: true
 
   readable-stream@3.6.2:
     dependencies:
       inherits: 2.0.4
       string_decoder: 1.3.0
       util-deprecate: 1.0.2
-    optional: true
 
   reflect-metadata@0.2.2: {}
 
@@ -4278,8 +4329,7 @@ snapshots:
 
   semver@5.7.2: {}
 
-  semver@7.7.3:
-    optional: true
+  semver@7.7.3: {}
 
   semver@7.8.0: {}
 
@@ -4346,15 +4396,13 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  simple-concat@1.0.1:
-    optional: true
+  simple-concat@1.0.1: {}
 
   simple-get@4.0.1:
     dependencies:
       decompress-response: 6.0.0
       once: 1.4.0
       simple-concat: 1.0.1
-    optional: true
 
   sisteransi@1.0.5: {}
 
@@ -4421,14 +4469,12 @@ snapshots:
   string_decoder@1.3.0:
     dependencies:
       safe-buffer: 5.2.1
-    optional: true
 
   strip-ansi@6.0.1:
     dependencies:
       ansi-regex: 5.0.1
 
-  strip-json-comments@2.0.1:
-    optional: true
+  strip-json-comments@2.0.1: {}
 
   strnum@2.3.0: {}
 
@@ -4442,7 +4488,6 @@ snapshots:
       mkdirp-classic: 0.5.3
       pump: 3.0.4
       tar-stream: 2.2.0
-    optional: true
 
   tar-stream@2.2.0:
     dependencies:
@@ -4451,7 +4496,6 @@ snapshots:
       fs-constants: 1.0.0
       inherits: 2.0.4
       readable-stream: 3.6.2
-    optional: true
 
   tiny-jsonc@1.0.2: {}
 
@@ -4523,10 +4567,8 @@ snapshots:
       '@types/w3c-web-usb': 1.0.14
       node-addon-api: 6.1.0
       node-gyp-build: 4.8.4
-    optional: true
 
-  util-deprecate@1.0.2:
-    optional: true
+  util-deprecate@1.0.2: {}
 
   validate-npm-package-license@3.0.4:
     dependencies:

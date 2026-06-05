@@ -1,6 +1,5 @@
+import { runSwitchboardClaimable as defaultRunSwitchboardClaimableRunner } from "../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
-
-import { runSwitchboardCompatibility } from "../switchboard.js";
 
 type RunSwitchboardClaimable = (argv?: readonly string[]) => Promise<void>;
 
@@ -104,18 +103,12 @@ export async function runSwitchboardClaimableNative(
   if (runner) {
     return runSwitchboardClaimableInProcess(runner, argv);
   }
-  return runSwitchboardCompatibility(["claimable", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardClaimable is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardClaimableRunner(): Promise<RunSwitchboardClaimable | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardClaimable === "function"
-      ? module.runSwitchboardClaimable
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardClaimableRunner;
 }
 
 async function runSwitchboardClaimableInProcess(

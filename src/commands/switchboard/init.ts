@@ -1,14 +1,11 @@
+import { runSwitchboardProjectInit as defaultRunSwitchboardProjectInitRunner } from "../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../switchboard.js";
-
 type RunSwitchboardProjectInit = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardInitOptions {
   runner?: RunSwitchboardProjectInit;
   loadRunner?: () => Promise<RunSwitchboardProjectInit | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardInit extends Command {
@@ -52,8 +49,8 @@ export async function runSwitchboardInitNative(
   if (runner) {
     return runSwitchboardProjectInitInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["init", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardProjectInit is unavailable.");
+  return 1;
 }
 
 const REMOVED_INIT_ENDPOINT_FLAGS = new Set(["--endpoint", "--hostname", "--endpoint-id"]);
@@ -86,14 +83,7 @@ function removedInitEndpointArgsMessage(argv: readonly string[]): string | undef
 }
 
 async function loadSwitchboardProjectInitRunner(): Promise<RunSwitchboardProjectInit | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardProjectInit === "function"
-      ? module.runSwitchboardProjectInit
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardProjectInitRunner;
 }
 
 async function runSwitchboardProjectInitInProcess(

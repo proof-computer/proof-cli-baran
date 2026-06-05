@@ -1,14 +1,11 @@
+import { runSwitchboardRelayCatalogBuild as defaultRunSwitchboardRelayCatalogBuildRunner } from "../../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../../switchboard.js";
-
 type RunSwitchboardRelayCatalogBuild = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardRelayCatalogBuildOptions {
   runner?: RunSwitchboardRelayCatalogBuild;
   loadRunner?: () => Promise<RunSwitchboardRelayCatalogBuild | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardRelayCatalogBuild extends Command {
@@ -80,19 +77,12 @@ export async function runSwitchboardRelayCatalogBuildNative(
   if (runner) {
     return runSwitchboardRelayCatalogBuildInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["relay", "catalog", "build", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardRelayCatalogBuild is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardRelayCatalogBuildRunner(): Promise<RunSwitchboardRelayCatalogBuild | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardRelayCatalogBuild === "function"
-      ? module.runSwitchboardRelayCatalogBuild
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardRelayCatalogBuildRunner;
 }
 
 async function runSwitchboardRelayCatalogBuildInProcess(

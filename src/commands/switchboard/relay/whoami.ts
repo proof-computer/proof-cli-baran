@@ -1,14 +1,11 @@
+import { runSwitchboardRelayWhoami as defaultRunSwitchboardRelayWhoamiRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardRelayWhoami = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardRelayWhoamiOptions {
   runner?: RunSwitchboardRelayWhoami;
   loadRunner?: () => Promise<RunSwitchboardRelayWhoami | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardRelayWhoami extends Command {
@@ -78,19 +75,12 @@ export async function runSwitchboardRelayWhoamiNative(
   if (runner) {
     return runSwitchboardRelayWhoamiInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["relay", "whoami", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardRelayWhoami is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardRelayWhoamiRunner(): Promise<RunSwitchboardRelayWhoami | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardRelayWhoami === "function"
-      ? module.runSwitchboardRelayWhoami
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardRelayWhoamiRunner;
 }
 
 async function runSwitchboardRelayWhoamiInProcess(

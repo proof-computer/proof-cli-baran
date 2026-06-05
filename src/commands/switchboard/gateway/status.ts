@@ -1,14 +1,11 @@
+import { runSwitchboardGatewayStatus as defaultRunSwitchboardGatewayStatusRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardGatewayStatus = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardGatewayStatusOptions {
   runner?: RunSwitchboardGatewayStatus;
   loadRunner?: () => Promise<RunSwitchboardGatewayStatus | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardGatewayStatus extends Command {
@@ -58,19 +55,12 @@ export async function runSwitchboardGatewayStatusNative(
   if (runner) {
     return runSwitchboardGatewayStatusInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["gateway", "status", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardGatewayStatus is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardGatewayStatusRunner(): Promise<RunSwitchboardGatewayStatus | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardGatewayStatus === "function"
-      ? module.runSwitchboardGatewayStatus
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardGatewayStatusRunner;
 }
 
 async function runSwitchboardGatewayStatusInProcess(

@@ -1,6 +1,5 @@
+import { runSwitchboardProjectShow as defaultRunSwitchboardProjectShowRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
-
-import { runSwitchboardCompatibility } from "../../switchboard.js";
 
 type RunSwitchboardProjectShow = (argv?: readonly string[]) => Promise<void>;
 
@@ -59,18 +58,12 @@ export async function runSwitchboardProjectShowNative(
   if (runner) {
     return runSwitchboardProjectShowInProcess(runner, argv);
   }
-  return runSwitchboardCompatibility(["project", "show", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardProjectShow is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardProjectShowRunner(): Promise<RunSwitchboardProjectShow | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardProjectShow === "function"
-      ? module.runSwitchboardProjectShow
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardProjectShowRunner;
 }
 
 async function runSwitchboardProjectShowInProcess(

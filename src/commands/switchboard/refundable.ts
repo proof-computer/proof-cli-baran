@@ -1,6 +1,5 @@
+import { runSwitchboardRefundable as defaultRunSwitchboardRefundableRunner } from "../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
-
-import { runSwitchboardCompatibility } from "../switchboard.js";
 
 type RunSwitchboardRefundable = (argv?: readonly string[]) => Promise<void>;
 
@@ -104,18 +103,12 @@ export async function runSwitchboardRefundableNative(
   if (runner) {
     return runSwitchboardRefundableInProcess(runner, argv);
   }
-  return runSwitchboardCompatibility(["refundable", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardRefundable is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardRefundableRunner(): Promise<RunSwitchboardRefundable | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardRefundable === "function"
-      ? module.runSwitchboardRefundable
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardRefundableRunner;
 }
 
 async function runSwitchboardRefundableInProcess(

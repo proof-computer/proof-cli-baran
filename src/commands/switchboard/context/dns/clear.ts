@@ -1,14 +1,11 @@
+import { runSwitchboardContextDnsClear as defaultRunSwitchboardContextDnsClearRunner } from "../../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../../switchboard.js";
-
 type RunSwitchboardContextDnsClear = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardContextDnsClearOptions {
   runner?: RunSwitchboardContextDnsClear;
   loadRunner?: () => Promise<RunSwitchboardContextDnsClear | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardContextDnsClear extends Command {
@@ -67,19 +64,12 @@ export async function runSwitchboardContextDnsClearNative(
   if (runner) {
     return runSwitchboardContextDnsClearInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["context", "dns", "clear", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardContextDnsClear is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardContextDnsClearRunner(): Promise<RunSwitchboardContextDnsClear | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardContextDnsClear === "function"
-      ? module.runSwitchboardContextDnsClear
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardContextDnsClearRunner;
 }
 
 async function runSwitchboardContextDnsClearInProcess(

@@ -1,14 +1,11 @@
+import { runSwitchboardClaim as defaultRunSwitchboardClaimRunner } from "../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../switchboard.js";
-
 type RunSwitchboardClaim = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardClaimOptions {
   runner?: RunSwitchboardClaim;
   loadRunner?: () => Promise<RunSwitchboardClaim | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardClaim extends Command {
@@ -47,19 +44,12 @@ export async function runSwitchboardClaimNative(
   if (runner) {
     return runSwitchboardClaimInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["claim", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardClaim is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardClaimRunner(): Promise<RunSwitchboardClaim | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardClaim === "function"
-      ? module.runSwitchboardClaim
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardClaimRunner;
 }
 
 async function runSwitchboardClaimInProcess(

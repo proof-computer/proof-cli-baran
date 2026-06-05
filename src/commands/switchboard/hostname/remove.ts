@@ -1,14 +1,11 @@
+import { runSwitchboardHostnameRemove as defaultRunSwitchboardHostnameRemoveRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardHostnameRemove = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardHostnameRemoveOptions {
   runner?: RunSwitchboardHostnameRemove;
   loadRunner?: () => Promise<RunSwitchboardHostnameRemove | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardHostnameRemove extends Command {
@@ -47,19 +44,12 @@ export async function runSwitchboardHostnameRemoveNative(
   if (runner) {
     return runSwitchboardHostnameRemoveInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["hostname", "remove", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardHostnameRemove is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardHostnameRemoveRunner(): Promise<RunSwitchboardHostnameRemove | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardHostnameRemove === "function"
-      ? module.runSwitchboardHostnameRemove
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardHostnameRemoveRunner;
 }
 
 async function runSwitchboardHostnameRemoveInProcess(

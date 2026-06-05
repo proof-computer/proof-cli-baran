@@ -1,14 +1,11 @@
+import { runSwitchboardRelayDiff as defaultRunSwitchboardRelayDiffRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardRelayDiff = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardRelayDiffOptions {
   runner?: RunSwitchboardRelayDiff;
   loadRunner?: () => Promise<RunSwitchboardRelayDiff | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardRelayDiff extends Command {
@@ -72,19 +69,12 @@ export async function runSwitchboardRelayDiffNative(
   if (runner) {
     return runSwitchboardRelayDiffInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["relay", "diff", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardRelayDiff is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardRelayDiffRunner(): Promise<RunSwitchboardRelayDiff | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardRelayDiff === "function"
-      ? module.runSwitchboardRelayDiff
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardRelayDiffRunner;
 }
 
 async function runSwitchboardRelayDiffInProcess(

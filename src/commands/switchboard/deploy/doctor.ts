@@ -1,6 +1,5 @@
+import { runSwitchboardDeployDoctor as defaultRunSwitchboardDeployDoctorRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
-
-import { runSwitchboardCompatibility } from "../../switchboard.js";
 
 type RunSwitchboardDeployDoctor = (argv?: readonly string[]) => Promise<void>;
 
@@ -110,18 +109,12 @@ export async function runSwitchboardDeployDoctorNative(
   if (runner) {
     return runSwitchboardDeployDoctorInProcess(runner, argv);
   }
-  return runSwitchboardCompatibility(["deploy", "doctor", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardDeployDoctor is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardDeployDoctorRunner(): Promise<RunSwitchboardDeployDoctor | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardDeployDoctor === "function"
-      ? module.runSwitchboardDeployDoctor
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardDeployDoctorRunner;
 }
 
 async function runSwitchboardDeployDoctorInProcess(

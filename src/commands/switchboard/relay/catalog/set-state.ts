@@ -1,14 +1,11 @@
+import { runSwitchboardRelayCatalogSetState as defaultRunSwitchboardRelayCatalogSetStateRunner } from "../../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../../switchboard.js";
-
 type RunSwitchboardRelayCatalogSetState = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardRelayCatalogSetStateOptions {
   runner?: RunSwitchboardRelayCatalogSetState;
   loadRunner?: () => Promise<RunSwitchboardRelayCatalogSetState | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardRelayCatalogSetState extends Command {
@@ -72,19 +69,12 @@ export async function runSwitchboardRelayCatalogSetStateNative(
   if (runner) {
     return runSwitchboardRelayCatalogSetStateInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["relay", "catalog", "set-state", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardRelayCatalogSetState is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardRelayCatalogSetStateRunner(): Promise<RunSwitchboardRelayCatalogSetState | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardRelayCatalogSetState === "function"
-      ? module.runSwitchboardRelayCatalogSetState
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardRelayCatalogSetStateRunner;
 }
 
 async function runSwitchboardRelayCatalogSetStateInProcess(

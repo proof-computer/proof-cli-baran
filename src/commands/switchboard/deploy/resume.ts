@@ -1,6 +1,5 @@
+import { runSwitchboardDeployResume as defaultRunSwitchboardDeployResumeRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
-
-import { runSwitchboardCompatibility } from "../../switchboard.js";
 
 type RunSwitchboardDeployResume = (argv?: readonly string[]) => Promise<void>;
 
@@ -71,18 +70,12 @@ export async function runSwitchboardDeployResumeNative(
   if (runner) {
     return runSwitchboardDeployResumeInProcess(runner, argv);
   }
-  return runSwitchboardCompatibility(["deploy", "resume", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardDeployResume is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardDeployResumeRunner(): Promise<RunSwitchboardDeployResume | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardDeployResume === "function"
-      ? module.runSwitchboardDeployResume
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardDeployResumeRunner;
 }
 
 async function runSwitchboardDeployResumeInProcess(

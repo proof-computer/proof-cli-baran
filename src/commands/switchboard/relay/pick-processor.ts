@@ -1,14 +1,11 @@
+import { runSwitchboardRelayPickProcessor as defaultRunSwitchboardRelayPickProcessorRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardRelayPickProcessor = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardRelayPickProcessorOptions {
   runner?: RunSwitchboardRelayPickProcessor;
   loadRunner?: () => Promise<RunSwitchboardRelayPickProcessor | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardRelayPickProcessor extends Command {
@@ -96,19 +93,12 @@ export async function runSwitchboardRelayPickProcessorNative(
   if (runner) {
     return runSwitchboardRelayPickProcessorInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["relay", "pick-processor", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardRelayPickProcessor is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardRelayPickProcessorRunner(): Promise<RunSwitchboardRelayPickProcessor | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardRelayPickProcessor === "function"
-      ? module.runSwitchboardRelayPickProcessor
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardRelayPickProcessorRunner;
 }
 
 async function runSwitchboardRelayPickProcessorInProcess(

@@ -1,6 +1,6 @@
 {
   "name": "@proof-computer/proof-cli-switchboard",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Switchboard plugin for the PROOF command line interface.",
   "private": false,
   "type": "module",
@@ -16,7 +16,11 @@
     "test": "node --import tsx --test test/*.test.ts",
     "prepare": "pnpm run build && node scripts/verify-package.mjs",
     "pack:dry-run": "npm pack --dry-run --json --ignore-scripts --cache .tmp/npm-cache",
-    "smoke:proof-plugin": "node scripts/smoke-proof-plugin.mjs"
+    "smoke:proof-plugin": "node scripts/smoke-proof-plugin.mjs",
+    "acurast:estimate-express": "tsx src/switchboard-core/scripts/acurast/express-harness.ts estimate-fee",
+    "acurast:deploy-express:direct": "tsx src/switchboard-core/scripts/acurast/express-harness.ts deploy-direct",
+    "acurast:update-env-express": "tsx src/switchboard-core/scripts/acurast/express-harness.ts update-env",
+    "hub:fund-native-asset-quote": "tsx src/switchboard-core/scripts/hub/fund-asset-quote-native.ts"
   },
   "repository": {
     "type": "git",
@@ -26,11 +30,39 @@
     "node": ">=22"
   },
   "dependencies": {
+    "@acurast/sdk": "1.2.1",
+    "@clack/prompts": "^1.3.0",
     "@oclif/core": "^4.11.3",
-    "@proof-computer/switchboard-cli": "0.2.1"
+    "@polkadot/api": "^16.5.6",
+    "@polkadot/keyring": "^14.0.3",
+    "@polkadot/util": "^14.0.3",
+    "@polkadot/util-crypto": "^14.0.3",
+    "@proofcomputer/switchboard-sdk": "github:proof-computer/switchboard-sdk#v0.1.4",
+    "acme-client": "^5.4.0",
+    "dotenv": "^17.4.2",
+    "esbuild": "^0.28.0",
+    "ethers": "^6.15.0",
+    "express": "^5.2.1",
+    "solc": "^0.8.30",
+    "zod": "^4.1.12"
+  },
+  "peerDependencies": {
+    "@ledgerhq/hw-transport-node-hid-singleton": "6.31.5",
+    "@zondax/ledger-substrate": "1.1.1"
+  },
+  "peerDependenciesMeta": {
+    "@ledgerhq/hw-transport-node-hid-singleton": {
+      "optional": true
+    },
+    "@zondax/ledger-substrate": {
+      "optional": true
+    }
   },
   "devDependencies": {
+    "@ledgerhq/hw-transport-node-hid-singleton": "6.31.5",
+    "@types/express": "^5.0.6",
     "@types/node": "^24.10.1",
+    "@zondax/ledger-substrate": "1.1.1",
     "oclif": "^4.23.7",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
@@ -43,6 +75,12 @@
         "description": "Switchboard ingress commands"
       }
     }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@proofcomputer/switchboard-sdk",
+      "esbuild"
+    ]
   },
   "license": "UNLICENSED"
 }

@@ -1,14 +1,11 @@
+import { runSwitchboardRelayDnsVerify as defaultRunSwitchboardRelayDnsVerifyRunner } from "../../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../../switchboard.js";
-
 type RunSwitchboardRelayDnsVerify = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardRelayDnsVerifyOptions {
   runner?: RunSwitchboardRelayDnsVerify;
   loadRunner?: () => Promise<RunSwitchboardRelayDnsVerify | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardRelayDnsVerify extends Command {
@@ -72,19 +69,12 @@ export async function runSwitchboardRelayDnsVerifyNative(
   if (runner) {
     return runSwitchboardRelayDnsVerifyInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["relay", "dns", "verify", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardRelayDnsVerify is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardRelayDnsVerifyRunner(): Promise<RunSwitchboardRelayDnsVerify | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardRelayDnsVerify === "function"
-      ? module.runSwitchboardRelayDnsVerify
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardRelayDnsVerifyRunner;
 }
 
 async function runSwitchboardRelayDnsVerifyInProcess(

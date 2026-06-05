@@ -1,8 +1,11 @@
+import { runSwitchboardDeploy as defaultRunSwitchboardDeployRunner } from "../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
+import {
+  createSwitchboardDeployProgressReporter,
+  type SwitchboardRunnerOptions
+} from "../../switchboard-progress.js";
 
-import { runSwitchboardCompatibility } from "../switchboard.js";
-
-type RunSwitchboardDeploy = (argv?: readonly string[]) => Promise<void>;
+type RunSwitchboardDeploy = (argv?: readonly string[], options?: SwitchboardRunnerOptions) => Promise<void>;
 
 export interface SwitchboardDeployOptions {
   runner?: RunSwitchboardDeploy;
@@ -119,28 +122,28 @@ export async function runSwitchboardDeployNative(
   if (runner) {
     return runSwitchboardDeployInProcess(runner, argv);
   }
-  return runSwitchboardCompatibility(["deploy", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardDeploy is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardDeployRunner(): Promise<RunSwitchboardDeploy | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardDeploy === "function"
-      ? module.runSwitchboardDeploy
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardDeployRunner;
 }
 
 async function runSwitchboardDeployInProcess(
   runner: RunSwitchboardDeploy,
   argv: readonly string[]
 ): Promise<number> {
+  const progress = createSwitchboardDeployProgressReporter({
+    action: "deploy",
+    argv
+  });
   try {
-    await runner(argv);
+    await runner(argv, progress ? { progress: progress.progress } : undefined);
+    progress?.complete();
     return typeof process.exitCode === "number" ? process.exitCode : 0;
   } catch (error) {
+    progress?.failed(error);
     if (!switchboardOutputHandled(error)) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`[switchboard] ${message}`);

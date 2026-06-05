@@ -1,14 +1,11 @@
+import { runSwitchboardContextDnsSet as defaultRunSwitchboardContextDnsSetRunner } from "../../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../../switchboard.js";
-
 type RunSwitchboardContextDnsSet = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardContextDnsSetOptions {
   runner?: RunSwitchboardContextDnsSet;
   loadRunner?: () => Promise<RunSwitchboardContextDnsSet | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardContextDnsSet extends Command {
@@ -68,19 +65,12 @@ export async function runSwitchboardContextDnsSetNative(
   if (runner) {
     return runSwitchboardContextDnsSetInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["context", "dns", "set", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardContextDnsSet is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardContextDnsSetRunner(): Promise<RunSwitchboardContextDnsSet | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardContextDnsSet === "function"
-      ? module.runSwitchboardContextDnsSet
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardContextDnsSetRunner;
 }
 
 async function runSwitchboardContextDnsSetInProcess(

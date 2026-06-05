@@ -1,14 +1,11 @@
+import { runSwitchboardRelayKeygen as defaultRunSwitchboardRelayKeygenRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardRelayKeygen = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardRelayKeygenOptions {
   runner?: RunSwitchboardRelayKeygen;
   loadRunner?: () => Promise<RunSwitchboardRelayKeygen | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardRelayKeygen extends Command {
@@ -69,19 +66,12 @@ export async function runSwitchboardRelayKeygenNative(
   if (runner) {
     return runSwitchboardRelayKeygenInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["relay", "keygen", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardRelayKeygen is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardRelayKeygenRunner(): Promise<RunSwitchboardRelayKeygen | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardRelayKeygen === "function"
-      ? module.runSwitchboardRelayKeygen
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardRelayKeygenRunner;
 }
 
 async function runSwitchboardRelayKeygenInProcess(

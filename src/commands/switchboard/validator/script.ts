@@ -1,14 +1,11 @@
+import { runSwitchboardValidatorScript as defaultRunSwitchboardValidatorScriptRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardValidatorScript = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardValidatorScriptOptions {
   runner?: RunSwitchboardValidatorScript;
   loadRunner?: () => Promise<RunSwitchboardValidatorScript | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardValidatorScript extends Command {
@@ -78,19 +75,12 @@ export async function runSwitchboardValidatorScriptNative(
   if (runner) {
     return runSwitchboardValidatorScriptInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["validator", "script", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardValidatorScript is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardValidatorScriptRunner(): Promise<RunSwitchboardValidatorScript | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardValidatorScript === "function"
-      ? module.runSwitchboardValidatorScript
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardValidatorScriptRunner;
 }
 
 async function runSwitchboardValidatorScriptInProcess(

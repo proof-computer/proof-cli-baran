@@ -1,14 +1,11 @@
+import { runSwitchboardContextAdd as defaultRunSwitchboardContextAddRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardContextAdd = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardContextAddOptions {
   runner?: RunSwitchboardContextAdd;
   loadRunner?: () => Promise<RunSwitchboardContextAdd | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardContextAdd extends Command {
@@ -69,19 +66,12 @@ export async function runSwitchboardContextAddNative(
   if (runner) {
     return runSwitchboardContextAddInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["context", "add", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardContextAdd is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardContextAddRunner(): Promise<RunSwitchboardContextAdd | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardContextAdd === "function"
-      ? module.runSwitchboardContextAdd
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardContextAddRunner;
 }
 
 async function runSwitchboardContextAddInProcess(

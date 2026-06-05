@@ -1,14 +1,11 @@
+import { runSwitchboardRelayLogs as defaultRunSwitchboardRelayLogsRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardRelayLogs = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardRelayLogsOptions {
   runner?: RunSwitchboardRelayLogs;
   loadRunner?: () => Promise<RunSwitchboardRelayLogs | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardRelayLogs extends Command {
@@ -81,19 +78,12 @@ export async function runSwitchboardRelayLogsNative(
   if (runner) {
     return runSwitchboardRelayLogsInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["relay", "logs", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardRelayLogs is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardRelayLogsRunner(): Promise<RunSwitchboardRelayLogs | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardRelayLogs === "function"
-      ? module.runSwitchboardRelayLogs
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardRelayLogsRunner;
 }
 
 async function runSwitchboardRelayLogsInProcess(

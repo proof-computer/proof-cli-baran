@@ -19,6 +19,7 @@ const forbiddenDependencies = [
   "@proof-computer/proof-cli-blackbox",
   "@proof-computer/proof-cli-lockbox",
   "@proof-computer/proof-cli-slipway",
+  "@proof-computer/switchboard-cli",
   "@proof/blackbox-cli",
   "@proof/lockbox-cli",
   "@proof/slipway-cli"
@@ -70,10 +71,6 @@ for (const forbidden of forbiddenDependencies) {
   if (dependencyBlocks.some((block) => Object.hasOwn(block, forbidden))) {
     errors.push(`Switchboard plugin must not depend on private product package ${forbidden}`);
   }
-}
-
-if (!Object.hasOwn(packageJson.dependencies ?? {}, "@proof-computer/switchboard-cli")) {
-  errors.push("Switchboard plugin must depend on the public switchboard-cli package");
 }
 
 if (errors.length > 0) {

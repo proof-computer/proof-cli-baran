@@ -1,100 +1,55 @@
 import { Command } from "@oclif/core";
-import { spawn } from "node:child_process";
-import { createRequire } from "node:module";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-
-type RunSwitchboardCli = (argv: readonly string[]) => Promise<void>;
-
-export interface SwitchboardCompatibilityOptions {
-  runner?: RunSwitchboardCli;
-}
 
 export default class Switchboard extends Command {
-  static description = "Run Switchboard commands.";
+  static description = "Switchboard ingress commands.";
   static strict = false;
-  static summary = "Run Switchboard commands.";
+  static summary = "Switchboard ingress commands.";
 
   async run(): Promise<void> {
     this.parsed = true;
-    const exitCode = await runSwitchboardCompatibility(this.argv);
-    if (exitCode !== 0) {
-      this.exit(exitCode);
+    if (this.argv.length === 0 || this.argv.includes("--help") || this.argv.includes("-h")) {
+      printSwitchboardRootHelp(this.config.bin);
+      return;
     }
+
+    console.error(
+      `[switchboard] Error (SB_COMMAND_NOT_NATIVE): unknown native proof switchboard command: ${this.argv.join(" ")}. ` +
+        `Run \`${this.config.bin} switchboard --help\` to list native commands.`
+    );
+    this.exit(1);
   }
 }
 
-export async function runSwitchboardCompatibility(
-  argv: readonly string[],
-  options: SwitchboardCompatibilityOptions = {}
-): Promise<number> {
-  const runner = options.runner ?? await loadSwitchboardRunner();
-  if (runner) {
-    return runSwitchboardInProcess(runner, argv);
-  }
-  return runSwitchboardChild(argv);
-}
+function printSwitchboardRootHelp(bin: string): void {
+  console.log(`Switchboard ingress commands.
 
-async function loadSwitchboardRunner(): Promise<RunSwitchboardCli | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardCli === "function" ? module.runSwitchboardCli : undefined;
-  } catch {
-    return undefined;
-  }
-}
+USAGE
+  $ ${bin} switchboard <command> [options]
 
-async function runSwitchboardInProcess(runner: RunSwitchboardCli, argv: readonly string[]): Promise<number> {
-  try {
-    await runner(argv);
-    return typeof process.exitCode === "number" ? process.exitCode : 0;
-  } catch (error) {
-    if (!switchboardOutputHandled(error)) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(`[switchboard] ${message}`);
-    }
-    return 1;
-  }
-}
+COMMANDS
+  init
+  project init|show
+  context add|current|list|set|use
+  context dns set|clear
+  preflight
+  deploy
+  deploy doctor|resume|status
+  launch-demo
+  status
+  claim|claimable|refund|refundable
+  session register|status|refund|refundable
+  hostname add|remove|status
+  validator launch|script
+  catalog build|inspect|set-state|verify
+  gateway discover|setup|status|upgrade
+  relay backfill-specs|budget|diff|keygen|list|logs|pick-processor|scaffold|status|sync|verify|watch|whoami
+  relay catalog build|set-state
+  relay dns apply|plan|remove|verify
+  bootstrap
+  ops
 
-async function runSwitchboardChild(argv: readonly string[]): Promise<number> {
-  const binPath = await resolveSwitchboardBinPath();
-
-  return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [binPath, ...argv], {
-      cwd: process.cwd(),
-      env: process.env,
-      stdio: "inherit"
-    });
-    child.on("error", reject);
-    child.on("exit", (code, signal) => {
-      if (typeof code === "number") {
-        resolve(code);
-        return;
-      }
-      console.error(`[switchboard] switchboard-cli exited from signal ${signal ?? "unknown"}`);
-      resolve(1);
-    });
-  });
-}
-
-async function resolveSwitchboardBinPath(): Promise<string> {
-  const require = createRequire(import.meta.url);
-  const packageJsonPath = require.resolve("@proof-computer/switchboard-cli/package.json");
-  const packageRoot = path.dirname(packageJsonPath);
-  const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8")) as {
-    bin?: {
-      switchboard?: string;
-    };
-  };
-  const bin = packageJson.bin?.switchboard ?? "dist/index.js";
-  return path.resolve(packageRoot, bin);
-}
-
-function switchboardOutputHandled(error: unknown): boolean {
-  return Boolean(
-    error &&
-      typeof error === "object" &&
-      (error as { switchboardOutputHandled?: boolean }).switchboardOutputHandled
-  );
+DESCRIPTION
+  All listed commands use native proof switchboard entrypoints backed by
+  local proof-cli-switchboard runners. The standalone switchboard
+  compatibility bridge has been removed.`);
 }

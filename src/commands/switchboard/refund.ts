@@ -1,14 +1,11 @@
+import { runSwitchboardRefund as defaultRunSwitchboardRefundRunner } from "../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../switchboard.js";
-
 type RunSwitchboardRefund = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardRefundOptions {
   runner?: RunSwitchboardRefund;
   loadRunner?: () => Promise<RunSwitchboardRefund | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardRefund extends Command {
@@ -47,19 +44,12 @@ export async function runSwitchboardRefundNative(
   if (runner) {
     return runSwitchboardRefundInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["refund", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardRefund is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardRefundRunner(): Promise<RunSwitchboardRefund | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardRefund === "function"
-      ? module.runSwitchboardRefund
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardRefundRunner;
 }
 
 async function runSwitchboardRefundInProcess(

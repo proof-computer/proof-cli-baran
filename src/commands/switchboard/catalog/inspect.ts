@@ -1,14 +1,11 @@
+import { runSwitchboardCatalogInspect as defaultRunSwitchboardCatalogInspectRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardCatalogInspect = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardCatalogInspectOptions {
   runner?: RunSwitchboardCatalogInspect;
   loadRunner?: () => Promise<RunSwitchboardCatalogInspect | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardCatalogInspect extends Command {
@@ -78,19 +75,12 @@ export async function runSwitchboardCatalogInspectNative(
   if (runner) {
     return runSwitchboardCatalogInspectInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["catalog", "inspect", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardCatalogInspect is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardCatalogInspectRunner(): Promise<RunSwitchboardCatalogInspect | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardCatalogInspect === "function"
-      ? module.runSwitchboardCatalogInspect
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardCatalogInspectRunner;
 }
 
 async function runSwitchboardCatalogInspectInProcess(

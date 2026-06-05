@@ -1,14 +1,11 @@
+import { runSwitchboardSessionStatus as defaultRunSwitchboardSessionStatusRunner } from "../../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
 
-import { runSwitchboardCompatibility } from "../../switchboard.js";
-
 type RunSwitchboardSessionStatus = (argv?: readonly string[]) => Promise<void>;
-type RunSwitchboardCompatibility = (argv: readonly string[]) => Promise<number>;
 
 export interface SwitchboardSessionStatusOptions {
   runner?: RunSwitchboardSessionStatus;
   loadRunner?: () => Promise<RunSwitchboardSessionStatus | undefined>;
-  compatibilityRunner?: RunSwitchboardCompatibility;
 }
 
 export default class SwitchboardSessionStatus extends Command {
@@ -84,19 +81,12 @@ export async function runSwitchboardSessionStatusNative(
   if (runner) {
     return runSwitchboardSessionStatusInProcess(runner, argv);
   }
-  const compatibilityRunner = options.compatibilityRunner ?? runSwitchboardCompatibility;
-  return compatibilityRunner(["session", "status", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardSessionStatus is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardSessionStatusRunner(): Promise<RunSwitchboardSessionStatus | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardSessionStatus === "function"
-      ? module.runSwitchboardSessionStatus
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardSessionStatusRunner;
 }
 
 async function runSwitchboardSessionStatusInProcess(

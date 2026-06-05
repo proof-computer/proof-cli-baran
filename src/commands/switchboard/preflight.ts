@@ -1,6 +1,5 @@
+import { runSwitchboardPreflight as defaultRunSwitchboardPreflightRunner } from "../../switchboard-core/cli/src/index.js";
 import { Command, Flags } from "@oclif/core";
-
-import { runSwitchboardCompatibility } from "../switchboard.js";
 
 type RunSwitchboardPreflight = (argv?: readonly string[]) => Promise<void>;
 
@@ -92,18 +91,12 @@ export async function runSwitchboardPreflightNative(
   if (runner) {
     return runSwitchboardPreflightInProcess(runner, argv);
   }
-  return runSwitchboardCompatibility(["preflight", ...argv]);
+  console.error("[switchboard] Error: internal proof switchboard runner runSwitchboardPreflight is unavailable.");
+  return 1;
 }
 
 async function loadSwitchboardPreflightRunner(): Promise<RunSwitchboardPreflight | undefined> {
-  try {
-    const module = await import("@proof-computer/switchboard-cli");
-    return typeof module.runSwitchboardPreflight === "function"
-      ? module.runSwitchboardPreflight
-      : undefined;
-  } catch {
-    return undefined;
-  }
+  return defaultRunSwitchboardPreflightRunner;
 }
 
 async function runSwitchboardPreflightInProcess(
