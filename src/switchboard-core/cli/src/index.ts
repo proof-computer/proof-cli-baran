@@ -6357,8 +6357,6 @@ function normalizedDeployWorkflowPhase(snapshot: SwitchboardDeployWorkflowSnapsh
       return "funding submitted";
     case "dns_propagated":
       return "dns propagated";
-    case "route_not_ready":
-      return "route not ready";
     case "route_active":
       return "route active";
     case "registration_observed":
@@ -6369,6 +6367,8 @@ function normalizedDeployWorkflowPhase(snapshot: SwitchboardDeployWorkflowSnapsh
       return "complete";
     case "failed":
       return "failed";
+    default:
+      return String(snapshot.step).replaceAll("_", " ");
   }
 }
 
