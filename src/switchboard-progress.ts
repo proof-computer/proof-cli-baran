@@ -402,6 +402,14 @@ function workflowProgressLine(
         ].filter(Boolean).join(" ") || undefined,
         section: section ?? "Switchboard Runner"
       };
+    case "activation_window_expiring":
+    case "activation_window_expired":
+      return {
+        status: "error",
+        label: "Activation window",
+        detail: activationWindowProgressDetail(record),
+        section: section ?? "Switchboard Runner"
+      };
     case "registration_observed":
     case "group_registration_observed":
       return { status: "ok", label: "Registered on Hub", detail: registrationProgressDetail(record), section: section ?? "Switchboard Runner" };
@@ -534,6 +542,17 @@ function routeProgressDetail(details: Record<string, unknown>): string | undefin
   return stringRecordField(details, "hostname")
     ? `host=${stringRecordField(details, "hostname")}`
     : memberCountDetail(details, "activeMembers") ?? stringRecordField(details, "status");
+}
+
+function activationWindowProgressDetail(details: Record<string, unknown>): string | undefined {
+  const reason = stringRecordField(details, "reason");
+  const deadline = stringRecordField(details, "activationDeadlineIso") ?? stringRecordField(details, "activationDeadline");
+  const remainingMs = numberRecordField(details, "activationDeadlineRemainingMs");
+  return [
+    reason,
+    deadline ? `deadline=${deadline}` : undefined,
+    remainingMs !== undefined ? `remaining=${formatProgressDuration(remainingMs)}` : undefined
+  ].filter(Boolean).join(" ") || undefined;
 }
 
 function registrationProgressDetail(details: Record<string, unknown>): string | undefined {

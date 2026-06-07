@@ -1923,6 +1923,7 @@ test("emits native launch-demo progress from proof runner events", async () => {
       options?.progress?.({ type: "workflow", event: "funding_submitted", details: { txHash: "0xfund" } });
       options?.progress?.({ type: "workflow", event: "dns_propagated", details: { hostname: "e-demo.example.test" } });
       options?.progress?.({ type: "workflow", event: "route_not_ready", details: { reason: "runtime_https_not_ready", healthState: "certificate_requesting", healthStage: "relay_response" } });
+      options?.progress?.({ type: "workflow", event: "activation_window_expiring", details: { reason: "activation_window_expiring", activationDeadlineIso: "2026-06-07T12:30:00.000Z", activationDeadlineRemainingMs: 30_000 } });
       options?.progress?.({ type: "workflow", event: "route_active", details: { hostname: "e-demo.example.test" } });
       options?.progress?.({ type: "workflow", event: "registration_observed", details: { sessionId: `0x${"44".repeat(32)}` } });
       options?.progress?.({ type: "workflow", event: "validation_observed", details: { reports: [{ ok: true }] } });
@@ -1950,6 +1951,7 @@ test("emits native launch-demo progress from proof runner events", async () => {
   assert.match(captured.stdout, /Funded Hub session/);
   assert.match(captured.stdout, /DNS propagated/);
   assert.match(captured.stdout, /Waiting for route readiness: runtime_https_not_ready health=certificate_requesting stage=relay_response/);
+  assert.match(captured.stdout, /Activation window: activation_window_expiring deadline=2026-06-07T12:30:00.000Z remaining=30s/);
   assert.match(captured.stdout, /Activated route/);
   assert.match(captured.stdout, /Registered on Hub/);
   assert.match(captured.stdout, /Validation observed/);
