@@ -1,12 +1,18 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import type { AddressInfo } from "node:net";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { createDeployWorkflowReadbackRetryFetch } from "../src/switchboard-core/cli/src/index.js";
+import {
+  createDeployWorkflowReadbackRetryFetch,
+  readLaunchDemoCapacity,
+  selectPinnedDeployCapacity
+} from "../src/switchboard-core/cli/src/index.js";
 import { runSwitchboardCatalogBuildNative } from "../src/commands/switchboard/catalog/build.js";
 import { runSwitchboardCatalogInspectNative } from "../src/commands/switchboard/catalog/inspect.js";
 import { runSwitchboardCatalogSetStateNative } from "../src/commands/switchboard/catalog/set-state.js";
@@ -1819,6 +1825,97 @@ test("fails deployment intent readback after bounded retries", async () => {
   assert.equal(calls, 4);
 });
 
+test("reads operator-capacity members as the authoritative capacity surface", async () => {
+  const member = testCapacityMember();
+  const legacyReport = testCapacityReport({ processor: TEST_LEGACY_PROCESSOR, reportId: "legacy-report" });
+
+  await withOperatorCapacityServer({
+    ok: true,
+    members: [member],
+    latest: [legacyReport]
+  }, async (relayUrl) => {
+    const snapshot = await readLaunchDemoCapacity(relayUrl);
+
+    assert.equal(snapshot.memberAware, true);
+    assert.equal(snapshot.members.length, 1);
+    assert.equal(snapshot.members[0]?.processorId, TEST_PROCESSOR_ID);
+    assert.equal(snapshot.members[0]?.sourceRelayUrl, relayUrl);
+    assert.equal(snapshot.reports.length, 1);
+  });
+});
+
+test("selects pinned deploy capacity from members before legacy reports", async () => {
+  const member = testCapacityMember({ reportId: "member-report" });
+  const legacyReport = testCapacityReport({ processor: TEST_LEGACY_PROCESSOR, reportId: "legacy-report" });
+
+  await withOperatorCapacityServer({
+    ok: true,
+    members: [member],
+    latest: [legacyReport]
+  }, async (relayUrl) => {
+    const selection = await selectPinnedDeployCapacity({
+      relayUrl,
+      network: "mainnet",
+      operatorId: TEST_OPERATOR_ID,
+      gatewayId: TEST_GATEWAY_ID,
+      processor: TEST_PROCESSOR
+    });
+
+    assert.equal(selection.processorId, TEST_PROCESSOR_ID);
+    assert.equal(selection.reportId, "member-report");
+    assert.equal(selection.sourceRelayUrl, relayUrl);
+    assert.equal(selection.members[0]?.sourceRelayUrl, relayUrl);
+  });
+});
+
+test("fails pinned deploy capacity when the processor is not advertised by the gateway member set", async () => {
+  await withOperatorCapacityServer({
+    ok: true,
+    members: [testCapacityMember()],
+    latest: [testCapacityReport({ processor: TEST_OTHER_PROCESSOR, reportId: "legacy-report" })]
+  }, async (relayUrl) => {
+    await assert.rejects(
+      () => selectPinnedDeployCapacity({
+        relayUrl,
+        network: "mainnet",
+        operatorId: TEST_OPERATOR_ID,
+        gatewayId: TEST_GATEWAY_ID,
+        processor: TEST_OTHER_PROCESSOR
+      }),
+      /processor not advertised by gateway/u
+    );
+  });
+});
+
+test("falls back to legacy operator-capabilities reports for older relays", async () => {
+  await withJsonServer((request, response) => {
+    if (request.url?.startsWith("/v1/operator-capacity")) {
+      writeJson(response, 404, { ok: false, error: "not_found" });
+      return;
+    }
+    if (request.url?.startsWith("/v1/operator-capabilities")) {
+      writeJson(response, 200, {
+        ok: true,
+        latest: [testCapacityReport({ processor: TEST_PROCESSOR, reportId: "legacy-report" })]
+      });
+      return;
+    }
+    writeJson(response, 404, { ok: false, error: "not_found" });
+  }, async (relayUrl) => {
+    const selection = await selectPinnedDeployCapacity({
+      relayUrl,
+      network: "mainnet",
+      operatorId: TEST_OPERATOR_ID,
+      gatewayId: TEST_GATEWAY_ID,
+      processor: TEST_PROCESSOR
+    });
+
+    assert.equal(selection.processorId, TEST_PROCESSOR_ID);
+    assert.equal(selection.reportId, "legacy-report");
+    assert.equal(selection.sourceRelayUrl, relayUrl);
+  });
+});
+
 test("forwards native launch-demo args to the local Switchboard runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardLaunchDemoNative(["--dry-run", "--json"], {
@@ -3426,4 +3523,117 @@ async function withMutedConsoleError<T>(fn: () => Promise<T>): Promise<T> {
   } finally {
     console.error = original;
   }
+}
+
+const TEST_OPERATOR_ID = `0x${"11".repeat(32)}`;
+const TEST_GATEWAY_ID = "gateway-test-1";
+const TEST_PROCESSOR_ID = `0x${"22".repeat(32)}`;
+const TEST_PROCESSOR = TEST_PROCESSOR_ID;
+const TEST_OTHER_PROCESSOR = `0x${"33".repeat(32)}`;
+const TEST_LEGACY_PROCESSOR = `0x${"44".repeat(32)}`;
+
+async function withOperatorCapacityServer<T>(body: Record<string, unknown>, fn: (relayUrl: string) => Promise<T>): Promise<T> {
+  return withJsonServer((request, response) => {
+    if (request.url?.startsWith("/v1/operator-capacity")) {
+      writeJson(response, 200, body);
+      return;
+    }
+    writeJson(response, 404, { ok: false, error: "not_found" });
+  }, fn);
+}
+
+async function withJsonServer<T>(
+  handler: (request: IncomingMessage, response: ServerResponse) => void | Promise<void>,
+  fn: (relayUrl: string) => Promise<T>
+): Promise<T> {
+  const server = createServer((request, response) => {
+    Promise.resolve(handler(request, response)).catch((error: unknown) => {
+      if (!response.headersSent) {
+        writeJson(response, 500, { ok: false, error: error instanceof Error ? error.message : String(error) });
+      } else {
+        response.destroy(error instanceof Error ? error : undefined);
+      }
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
+  const address = server.address() as AddressInfo;
+  try {
+    return await fn(`http://127.0.0.1:${address.port}`);
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+}
+
+function writeJson(response: ServerResponse, statusCode: number, body: Record<string, unknown>): void {
+  response.statusCode = statusCode;
+  response.setHeader("content-type", "application/json");
+  response.end(`${JSON.stringify(body)}\n`);
+}
+
+function testCapacityMember(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    operatorId: TEST_OPERATOR_ID,
+    gatewayId: TEST_GATEWAY_ID,
+    processor: TEST_PROCESSOR,
+    processorId: TEST_PROCESSOR_ID,
+    managerId: "manager-test-1",
+    reportId: "member-report",
+    reportedAt: "2026-06-08T12:00:00.000Z",
+    expiresAt: "2999-01-01T00:00:00.000Z",
+    activeRouteCount: 0,
+    routeCapacity: 20,
+    availableRouteSlots: 20,
+    publicAddresses: ["198.51.100.10"],
+    routeStateAvailable: true,
+    processorDiscoveryFresh: true,
+    reportedProcessorCount: 1,
+    supportedClasses: ["node-webserver"],
+    upstreamAdmissionModes: ["relay-pull"],
+    sourceRelayId: "relay-test-1",
+    ...overrides
+  };
+}
+
+function testCapacityReport(overrides: { processor?: string; reportId?: string } = {}): Record<string, unknown> {
+  const processor = overrides.processor ?? TEST_PROCESSOR;
+  return {
+    receivedAt: "2026-06-08T12:00:00.000Z",
+    report: {
+      version: 1,
+      kind: "switchboard.operator.capability",
+      reportId: overrides.reportId ?? "legacy-report",
+      reportedAt: "2026-06-08T12:00:00.000Z",
+      expiresAt: "2999-01-01T00:00:00.000Z",
+      operator: {
+        operatorId: TEST_OPERATOR_ID,
+        gatewayId: TEST_GATEWAY_ID,
+        managerIds: ["manager-test-1"]
+      },
+      gateway: {
+        publicAddresses: ["198.51.100.10"],
+        activeRouteCount: 0,
+        routeCapacity: 20,
+        routeStateAvailable: true,
+        processorDiscoveryFresh: true,
+        reportedProcessorCount: 1,
+        supportedClasses: ["node-webserver"],
+        upstreamAdmissionModes: ["relay-pull"]
+      },
+      processorScopes: [
+        {
+          kind: "explicit",
+          managerId: "manager-test-1",
+          processors: [processor]
+        }
+      ]
+    }
+  };
 }

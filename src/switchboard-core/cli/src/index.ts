@@ -47,6 +47,7 @@ import {
   processorRefToId,
   publicIpv4Address,
   type GatewayCapabilityReport,
+  type OperatorCapacityMember,
   type ProcessorScope
 } from "../../src/operator-capability.js";
 import { runOperatorDiscover } from "../../scripts/operator/discover.js";
@@ -2458,10 +2459,12 @@ interface LaunchDemoMemberSelection extends LaunchDemoProcessorSelection {
   gatewayId: string;
   managerId?: string;
   reportId: string;
+  reportedAt?: string;
   reportExpiresAt: string;
   publicAddresses: string[];
   activeRouteCount: number;
   routeCapacity: number;
+  sourceRelayId?: string;
   sourceRelayUrl?: string;
 }
 
@@ -2476,6 +2479,21 @@ interface LaunchDemoCapacityReport {
   report: LaunchDemoGatewayCapabilityReport;
   sourceRelayUrl?: string;
 }
+
+type LaunchDemoCapacityMember = OperatorCapacityMember & {
+  sourceRelayUrl?: string;
+};
+
+interface LaunchDemoCapacitySnapshot {
+  relayUrl?: string;
+  memberAware: boolean;
+  members: LaunchDemoCapacityMember[];
+  reports: LaunchDemoCapacityReport[];
+}
+
+type LaunchDemoCapacityRelayResult =
+  | { ok: true; relayUrl: string; memberAware: boolean; members: LaunchDemoCapacityMember[]; reports: LaunchDemoCapacityReport[] }
+  | { ok: false; relayUrl: string; error: string };
 
 type LaunchDemoQuotePreview =
   | {
@@ -2558,6 +2576,7 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
   });
   launchDemoDebug(`selected ${selection.processors.length} processor candidate(s)`);
   const operationRelayUrl = selection.sourceRelayUrl ?? relayUrl;
+  await assertSelectedCapacityStillAdvertised(selection, operationRelayUrl);
   const ingressEstimate = await fetchLaunchDemoQuotePreview({
     relayUrl: operationRelayUrl,
     assetAddress: manifestConfig.defaultAssetAddress,
@@ -3245,6 +3264,10 @@ function normalizeCliBaseUrl(value: string): string {
   return new URL("/", value).toString().replace(/\/$/, "");
 }
 
+function normalizeOptionalUrl(value: string | undefined): string {
+  return value ? normalizeCliBaseUrl(value) : "";
+}
+
 function uniqueStrings(values: string[]): string[] {
   return [...new Set(values.filter((value) => value.length > 0))];
 }
@@ -3263,13 +3286,50 @@ async function selectLaunchDemoCapacity(input: {
   requiredModules?: string[];
 }): Promise<LaunchDemoCapacitySelection> {
   const relayUrls = input.relayUrls?.length ? input.relayUrls : [input.relayUrl];
-  const reports = await readLaunchDemoCapabilityReports(relayUrls);
+  const capacity = await readLaunchDemoCapacity(relayUrls);
   const errors: string[] = [];
   const requestedOperatorId = input.operatorId?.toLowerCase();
   const requestedProcessorId = input.processor ? processorRefToId(input.processor) : undefined;
   if (input.processor && !requestedProcessorId) {
     throw new Error(`Cannot normalize pinned processor ${input.processor}; expected a 32-byte hex processor ID or SS58 processor address.`);
   }
+
+  if (capacity.memberAware) {
+    const candidates = launchDemoCapacityMemberCandidates(capacity.members, {
+      operatorId: input.operatorId,
+      gatewayId: input.gatewayId,
+      processor: input.processor,
+      requestedProcessorId,
+      errors
+    });
+    const filteredCandidates = await filterAcurastModuleCapableMembers(candidates, {
+      network: input.network,
+      requiredModules: input.requiredModules,
+      errors
+    });
+    if (filteredCandidates.length < input.processorCount) {
+      const reason = errors.length > 0 ? ` Checked: ${errors.slice(0, 5).join("; ")}` : "";
+      const pinned = [
+        input.operatorId ? `operator ${input.operatorId}` : undefined,
+        input.gatewayId ? `gateway ${input.gatewayId}` : undefined,
+        input.processor ? `processor ${input.processor}` : undefined
+      ].filter(Boolean).join(", ");
+      const scope = pinned ? ` for ${pinned}` : "";
+      const source = relayUrls.length === 1 ? relayUrls[0] : `${relayUrls.length} control relays`;
+      throw new Error(`Only ${filteredCandidates.length}/${input.processorCount} launch-demo processors are currently available from ${source}${scope}.${reason}`);
+    }
+    const selectedMembers = selectLaunchDemoCandidatePool(filteredCandidates, input.processorCount);
+    const selectedGateways = new Set(selectedMembers.map((member) => member.gatewayId));
+    if (input.processorCount > 1 && selectedGateways.size < 2) {
+      throw new Error(`launch-demo --ha requires selected members across at least two gateways; selected ${selectedGateways.size}`);
+    }
+    if (selectedMembers.length < input.minReady) {
+      throw new Error(`Only ${selectedMembers.length}/${input.minReady} launch-demo members could be selected`);
+    }
+    return launchDemoSelectionFromMembers(selectedMembers);
+  }
+
+  const reports = capacity.reports;
   const eligibleReports = reports
     .filter((stored) => {
       if (requestedOperatorId && stored.report.operator.operatorId.toLowerCase() !== requestedOperatorId) {
@@ -3289,7 +3349,7 @@ async function selectLaunchDemoCapacity(input: {
       const capacityDiff = left.report.gateway.activeRouteCount - right.report.gateway.activeRouteCount;
       if (capacityDiff !== 0) return capacityDiff;
       return Date.parse(right.report.reportedAt) - Date.parse(left.report.reportedAt);
-  });
+    });
   const candidates: LaunchDemoMemberSelection[] = [];
 
   for (const stored of eligibleReports) {
@@ -3378,6 +3438,44 @@ export function launchDemoManagerScopeProcessors(scope: ProcessorScope): string[
   return [...new Set([...(scope.processors ?? []), ...(scope.includeProcessors ?? [])].filter((value) => value.length > 0))];
 }
 
+function launchDemoCapacityMemberCandidates(
+  members: LaunchDemoCapacityMember[],
+  input: {
+    operatorId?: string;
+    gatewayId?: string;
+    processor?: string;
+    requestedProcessorId?: string;
+    errors: string[];
+  }
+): LaunchDemoMemberSelection[] {
+  const requestedOperatorId = input.operatorId?.toLowerCase();
+  const scopedMembers = members.filter((member) => {
+    if (requestedOperatorId && member.operatorId.toLowerCase() !== requestedOperatorId) {
+      return false;
+    }
+    if (input.gatewayId && member.gatewayId !== input.gatewayId) {
+      return false;
+    }
+    return true;
+  });
+  const matchingMembers = input.requestedProcessorId
+    ? scopedMembers.filter((member) => member.processorId.toLowerCase() === input.requestedProcessorId)
+    : scopedMembers;
+  if (input.gatewayId && input.requestedProcessorId && scopedMembers.length > 0 && matchingMembers.length === 0) {
+    throw new Error(`processor not advertised by gateway: gateway ${input.gatewayId} does not advertise processor ${input.processor ?? input.requestedProcessorId}`);
+  }
+  const candidates: LaunchDemoMemberSelection[] = [];
+  for (const member of matchingMembers) {
+    const reason = launchDemoMemberEligibilityReason(member);
+    if (reason) {
+      input.errors.push(`${member.gatewayId}/${member.processorId}: ${reason}`);
+      continue;
+    }
+    candidates.push(launchDemoMemberFromCapacityMember(member, `member-${candidates.length + 1}`));
+  }
+  return candidates;
+}
+
 export function selectLaunchDemoCandidatePool(
   candidates: LaunchDemoMemberSelection[],
   processorCount: number
@@ -3412,6 +3510,29 @@ function launchDemoMemberFromReport(
   };
 }
 
+function launchDemoMemberFromCapacityMember(
+  member: LaunchDemoCapacityMember,
+  memberId: string
+): LaunchDemoMemberSelection {
+  return {
+    memberId,
+    operatorId: member.operatorId.toLowerCase(),
+    gatewayId: member.gatewayId,
+    managerId: member.managerId,
+    processor: member.processor,
+    processorId: member.processorId.toLowerCase(),
+    readiness: capabilityReportProcessorReadiness(member.processor),
+    reportId: member.reportId,
+    reportedAt: member.reportedAt,
+    reportExpiresAt: member.expiresAt,
+    publicAddresses: member.publicAddresses,
+    activeRouteCount: member.activeRouteCount,
+    routeCapacity: member.routeCapacity,
+    sourceRelayId: member.sourceRelayId,
+    sourceRelayUrl: member.sourceRelayUrl
+  };
+}
+
 function capabilityReportProcessorReadiness(processor: string): ProcessorInfo {
   return {
     processor,
@@ -3436,11 +3557,39 @@ async function selectDeployCapacity(input: {
   if (input.processor && !requestedProcessorId) {
     throw new Error(`Cannot normalize pinned processor ${input.processor}; expected a 32-byte hex processor ID or SS58 processor address.`);
   }
-  const reports = await readLaunchDemoCapabilityReports(input.relayUrls?.length ? input.relayUrls : [input.relayUrl]);
+  const relayUrls = input.relayUrls?.length ? input.relayUrls : [input.relayUrl];
+  const capacity = await readLaunchDemoCapacity(relayUrls);
   const errors: string[] = [];
   const candidates: LaunchDemoMemberSelection[] = [];
 
-  for (const stored of reports) {
+  if (capacity.memberAware) {
+    const memberCandidates = launchDemoCapacityMemberCandidates(capacity.members, {
+      operatorId: input.operatorId,
+      gatewayId: input.gatewayId,
+      processor: input.processor,
+      requestedProcessorId,
+      errors
+    });
+    const filteredCandidates = await filterAcurastModuleCapableMembers(memberCandidates, {
+      network: input.network,
+      requiredModules: input.requiredModules,
+      errors
+    });
+    filteredCandidates.sort(compareLaunchDemoMembers);
+    const selected = filteredCandidates[0];
+    if (!selected) {
+      const request = [
+        input.operatorId ? `operator ${input.operatorId}` : undefined,
+        input.gatewayId ? `gateway ${input.gatewayId}` : undefined,
+        input.processor ? `processor ${input.processor}` : undefined
+      ].filter(Boolean).join(", ") || "available operator capacity";
+      const checked = errors.length > 0 ? ` Checked: ${errors.slice(0, 5).join("; ")}` : "";
+      throw new Error(`No route-state-capable deploy capacity matched ${request}.${checked}`);
+    }
+    return launchDemoSelectionFromMembers([{ ...selected, memberId: "member-1" }]);
+  }
+
+  for (const stored of capacity.reports) {
     const report = stored.report;
     if (requestedOperatorId && report.operator.operatorId.toLowerCase() !== requestedOperatorId) {
       continue;
@@ -3625,7 +3774,13 @@ function compareLaunchDemoMembers(left: LaunchDemoMemberSelection, right: Launch
 }
 
 function launchDemoMemberKey(member: LaunchDemoMemberSelection): string {
-  return `${member.gatewayId}:${member.processorId}`;
+  return [
+    member.operatorId.toLowerCase(),
+    member.gatewayId,
+    member.processorId.toLowerCase(),
+    member.reportId,
+    normalizeOptionalUrl(member.sourceRelayUrl)
+  ].join(":");
 }
 
 function launchDemoSelectionFromMembers(members: LaunchDemoMemberSelection[]): LaunchDemoCapacitySelection {
@@ -3656,14 +3811,25 @@ function launchDemoSelectionFromMembers(members: LaunchDemoMemberSelection[]): L
 }
 
 export async function readLaunchDemoCapabilityReports(relayUrls: string | string[]): Promise<LaunchDemoCapacityReport[]> {
+  return (await readLaunchDemoCapacity(relayUrls)).reports;
+}
+
+export async function readLaunchDemoCapacity(relayUrls: string | string[]): Promise<LaunchDemoCapacitySnapshot> {
   const urls = Array.isArray(relayUrls) ? relayUrls : [relayUrls];
   if (urls.length === 1) {
-    return readLaunchDemoCapabilityReportsFromRelay(urls[0]);
+    return readLaunchDemoCapacitySnapshotFromRelay(urls[0]);
   }
   const results = await Promise.all(urls.map((relayUrl) => readLaunchDemoCapacityFromRelay(relayUrl)));
-  const successfulReports = results.flatMap((result) => result.ok ? result.reports : []);
-  if (successfulReports.length > 0) {
-    return newestLaunchDemoReportsByGateway(successfulReports);
+  const successful = results.filter((result): result is Extract<LaunchDemoCapacityRelayResult, { ok: true }> => result.ok);
+  const memberAware = successful.some((result) => result.memberAware);
+  const successfulReports = successful.flatMap((result) => result.reports);
+  const successfulMembers = successful.flatMap((result) => result.members);
+  if (memberAware || successfulReports.length > 0) {
+    return {
+      memberAware,
+      members: newestLaunchDemoMembersBySelectionKey(successfulMembers),
+      reports: newestLaunchDemoReportsByGateway(successfulReports)
+    };
   }
   const details = results
     .map((result) => result.ok ? `${result.relayUrl}:0` : `${result.relayUrl}:${result.error}`)
@@ -3679,10 +3845,20 @@ async function readLaunchDemoCapabilityReportsFromRelay(relayUrl: string): Promi
   throw new Error(`Operator capacity lookup failed at ${relayUrl}: ${result.error}`);
 }
 
-async function readLaunchDemoCapacityFromRelay(relayUrl: string): Promise<
-  | { ok: true; relayUrl: string; reports: LaunchDemoCapacityReport[] }
-  | { ok: false; relayUrl: string; error: string }
-> {
+async function readLaunchDemoCapacitySnapshotFromRelay(relayUrl: string): Promise<LaunchDemoCapacitySnapshot> {
+  const result = await readLaunchDemoCapacityFromRelay(relayUrl);
+  if (result.ok) {
+    return {
+      relayUrl,
+      memberAware: result.memberAware,
+      members: result.members,
+      reports: result.reports
+    };
+  }
+  throw new Error(`Operator capacity lookup failed at ${relayUrl}: ${result.error}`);
+}
+
+async function readLaunchDemoCapacityFromRelay(relayUrl: string): Promise<LaunchDemoCapacityRelayResult> {
   const url = new URL("/v1/operator-capacity", relayUrl);
   url.searchParams.set("activeOnly", "true");
   url.searchParams.set("limit", "100");
@@ -3699,6 +3875,8 @@ async function readLaunchDemoCapacityFromRelay(relayUrl: string): Promise<
       return {
         ok: true,
         relayUrl,
+        memberAware: false,
+        members: [],
         reports: (await readLegacyLaunchDemoCapabilityReports(relayUrl)).map((report) => ({ ...report, sourceRelayUrl: relayUrl }))
       };
     }
@@ -3711,10 +3889,16 @@ async function readLaunchDemoCapacityFromRelay(relayUrl: string): Promise<
         error: reason ? `${error}:${reason}` : `${error}:${body.slice(0, 300)}`
       };
     }
+    const memberAware = Array.isArray(parsed.members);
+    const memberValues = memberAware ? parsed.members as unknown[] : [];
     const values = Array.isArray(parsed.latest) ? parsed.latest : Array.isArray(parsed.reports) ? parsed.reports : [];
     return {
       ok: true,
       relayUrl,
+      memberAware,
+      members: memberValues
+        .filter(isLaunchDemoCapacityMember)
+        .map((member) => ({ ...member, sourceRelayUrl: member.sourceRelayUrl ?? relayUrl })),
       reports: values
         .filter(isLaunchDemoCapacityReport)
         .map((report) => ({ ...report, sourceRelayUrl: relayUrl }))
@@ -3742,6 +3926,38 @@ function newestLaunchDemoReportsByGateway(reports: LaunchDemoCapacityReport[]): 
     if (routeDiff !== 0) return routeDiff;
     return Date.parse(right.report.reportedAt) - Date.parse(left.report.reportedAt);
   });
+}
+
+function newestLaunchDemoMembersBySelectionKey(members: LaunchDemoCapacityMember[]): LaunchDemoCapacityMember[] {
+  const latest = new Map<string, LaunchDemoCapacityMember>();
+  for (const member of members) {
+    const key = launchDemoCapacityMemberSelectionKey(member);
+    const existing = latest.get(key);
+    if (!existing || Date.parse(member.reportedAt) > Date.parse(existing.reportedAt)) {
+      latest.set(key, member);
+    }
+  }
+  return [...latest.values()].sort(compareLaunchDemoCapacityMembers);
+}
+
+function compareLaunchDemoCapacityMembers(left: LaunchDemoCapacityMember, right: LaunchDemoCapacityMember): number {
+  const routeDiff = left.activeRouteCount - right.activeRouteCount;
+  if (routeDiff !== 0) return routeDiff;
+  const capacityDiff = right.routeCapacity - left.routeCapacity;
+  if (capacityDiff !== 0) return capacityDiff;
+  const reportedDiff = Date.parse(right.reportedAt) - Date.parse(left.reportedAt);
+  if (reportedDiff !== 0) return reportedDiff;
+  return left.processor.localeCompare(right.processor);
+}
+
+function launchDemoCapacityMemberSelectionKey(member: LaunchDemoCapacityMember): string {
+  return [
+    member.operatorId.toLowerCase(),
+    member.gatewayId,
+    member.processorId.toLowerCase(),
+    member.reportId,
+    normalizeOptionalUrl(member.sourceRelayUrl)
+  ].join(":");
 }
 
 async function readLegacyLaunchDemoCapabilityReports(relayUrl: string): Promise<LaunchDemoCapacityReport[]> {
@@ -3780,6 +3996,25 @@ function isLaunchDemoCapacityReport(value: unknown): value is LaunchDemoCapacity
   return Boolean(gateway && typeof gateway === "object" && !Array.isArray(gateway));
 }
 
+function isLaunchDemoCapacityMember(value: unknown): value is LaunchDemoCapacityMember {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.operatorId === "string" &&
+    typeof record.gatewayId === "string" &&
+    typeof record.processor === "string" &&
+    typeof record.processorId === "string" &&
+    typeof record.reportId === "string" &&
+    typeof record.reportedAt === "string" &&
+    typeof record.expiresAt === "string" &&
+    typeof record.activeRouteCount === "number" &&
+    typeof record.routeCapacity === "number" &&
+    Array.isArray(record.publicAddresses)
+  );
+}
+
 export function launchDemoReportEligibilityReason(report: GatewayCapabilityReport): string | undefined {
   if (Date.parse(report.expiresAt) <= Date.now()) {
     return "capability report expired";
@@ -3801,8 +4036,76 @@ export function launchDemoReportEligibilityReason(report: GatewayCapabilityRepor
   return undefined;
 }
 
+function launchDemoMemberEligibilityReason(member: LaunchDemoCapacityMember): string | undefined {
+  if (Date.parse(member.expiresAt) <= Date.now()) {
+    return "capability report expired";
+  }
+  if (!member.routeStateAvailable) {
+    return "route-state polling unavailable";
+  }
+  if (member.routeCapacity <= 0) {
+    return "route capacity disabled";
+  }
+  if (member.activeRouteCount >= member.routeCapacity) {
+    return "route capacity exhausted";
+  }
+  if (member.processorDiscoveryFresh === false) {
+    return "processor discovery stale";
+  }
+  const classes = member.supportedClasses ?? [];
+  if (classes.length > 0 && !classes.includes("node-webserver")) {
+    return "node-webserver class unsupported";
+  }
+  return undefined;
+}
+
 function launchDemoReportHasCapacity(report: GatewayCapabilityReport): boolean {
   return launchDemoReportEligibilityReason(report) === undefined;
+}
+
+async function assertSelectedCapacityStillAdvertised(selection: LaunchDemoCapacitySelection, fallbackRelayUrl: string): Promise<void> {
+  const byRelayUrl = new Map<string, LaunchDemoMemberSelection[]>();
+  for (const member of selection.members) {
+    const relayUrl = member.sourceRelayUrl ?? selection.sourceRelayUrl ?? fallbackRelayUrl;
+    byRelayUrl.set(relayUrl, [...(byRelayUrl.get(relayUrl) ?? []), member]);
+  }
+
+  for (const [relayUrl, members] of byRelayUrl) {
+    const snapshot = await readLaunchDemoCapacity(relayUrl);
+    if (snapshot.memberAware) {
+      for (const selected of members) {
+        const advertised = snapshot.members.some((member) => launchDemoMemberMatchesSelection(member, selected));
+        if (!advertised) {
+          throw new Error(`processor not advertised by gateway: gateway ${selected.gatewayId} does not advertise processor ${selected.processor}`);
+        }
+      }
+      continue;
+    }
+
+    for (const selected of members) {
+      const report = snapshot.reports.find((candidate) =>
+        candidate.report.operator.operatorId.toLowerCase() === selected.operatorId.toLowerCase() &&
+        candidate.report.operator.gatewayId === selected.gatewayId &&
+        candidate.report.reportId === selected.reportId
+      );
+      const advertised = report
+        ? expandedReportProcessors(report.report).some((processor) => processor.processorId === selected.processorId.toLowerCase())
+        : false;
+      if (!advertised) {
+        throw new Error(`processor not advertised by gateway: gateway ${selected.gatewayId} does not advertise processor ${selected.processor}`);
+      }
+    }
+  }
+}
+
+function launchDemoMemberMatchesSelection(member: LaunchDemoCapacityMember, selected: LaunchDemoMemberSelection): boolean {
+  return (
+    member.operatorId.toLowerCase() === selected.operatorId.toLowerCase() &&
+    member.gatewayId === selected.gatewayId &&
+    member.processorId.toLowerCase() === selected.processorId.toLowerCase() &&
+    member.reportId === selected.reportId &&
+    normalizeOptionalUrl(member.sourceRelayUrl) === normalizeOptionalUrl(selected.sourceRelayUrl)
+  );
 }
 
 export async function fetchLaunchDemoQuotePreview(input: {
@@ -4114,10 +4417,12 @@ function launchDemoMemberEnv(member: LaunchDemoMemberSelection): Record<string, 
     processor: member.processor,
     processorId: member.processorId,
     reportId: member.reportId,
+    reportedAt: member.reportedAt,
     reportExpiresAt: member.reportExpiresAt,
     publicAddresses: member.publicAddresses,
     activeRouteCount: member.activeRouteCount,
     routeCapacity: member.routeCapacity,
+    sourceRelayId: member.sourceRelayId,
     sourceRelayUrl: member.sourceRelayUrl,
     heartbeatAgeSeconds: member.readiness.heartbeatAgeSeconds,
     availability: member.readiness.availability
@@ -4202,8 +4507,10 @@ function launchDemoWorkflowGroupMember(member: LaunchDemoMemberSelection): Switc
     gatewayId: member.gatewayId,
     managerId: member.managerId,
     reportId: member.reportId,
+    reportedAt: member.reportedAt,
     reportExpiresAt: member.reportExpiresAt,
     publicAddresses: member.publicAddresses,
+    sourceRelayId: member.sourceRelayId,
     sourceRelayUrl: member.sourceRelayUrl
   };
 }
@@ -7832,6 +8139,9 @@ async function deployCommand(flags: Map<string, string | boolean>, runtime: CliR
   }
 
   const operationRelayUrl = selection?.sourceRelayUrl ?? relayUrl;
+  if (selection) {
+    await assertSelectedCapacityStillAdvertised(selection, operationRelayUrl);
+  }
   const childArgs = [INTERNAL_DEPLOY_RUNNER_SCRIPT, "--", "--yes", "--relay-url", operationRelayUrl, "--operator-id", operatorId];
   if (!boolFlag(flags, "no-dns")) {
     childArgs.push("--dns");

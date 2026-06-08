@@ -187,6 +187,7 @@ export interface OperatorCapabilityCandidate {
   reportId: string;
   reportExpiresAt: string;
   reportSigner: string;
+  publicAddresses: string[];
   activeRouteCount: number;
   routeCapacity: number;
   routeStateUrl?: string;
@@ -197,6 +198,30 @@ export interface OperatorCapabilityCandidate {
   selectionReasons: string[];
 }
 
+export interface OperatorCapacityMember {
+  operatorId: string;
+  gatewayId: string;
+  processor: string;
+  processorId: string;
+  managerId?: string;
+  reportId: string;
+  reportedAt: string;
+  expiresAt: string;
+  activeRouteCount: number;
+  routeCapacity: number;
+  availableRouteSlots: number;
+  publicAddresses: string[];
+  routeStateAvailable: boolean;
+  routeStateHealthy?: boolean;
+  routeStateLastSuccessAt?: string;
+  processorDiscoveryFresh?: boolean;
+  reportedProcessorCount?: number;
+  supportedClasses: string[];
+  upstreamAdmissionModes: GatewayUpstreamAdmissionMode[];
+  sourceRelayId?: string;
+  sourceRelayUrl?: string;
+}
+
 export interface SelectOperatorCapabilityCandidateInput {
   profiles: OperatorProfile[];
   reports: StoredGatewayCapabilityReport[];
@@ -205,6 +230,18 @@ export interface SelectOperatorCapabilityCandidateInput {
   processorId?: string;
   requireRouteStateUrl?: boolean;
   requireRouteIntentSink?: boolean;
+}
+
+export interface SelectOperatorCapacityMembersInput {
+  profiles: OperatorProfile[];
+  reports: StoredGatewayCapabilityReport[];
+  now?: Date;
+  operatorId?: string;
+  gatewayId?: string;
+  processorId?: string;
+  requireRouteStateUrl?: boolean;
+  sourceRelayId?: string;
+  sourceRelayUrl?: string;
 }
 
 export async function signGatewayCapabilityReport(
@@ -441,6 +478,9 @@ export function selectOperatorCapabilityCandidate(
     if (report.gateway.routeCapacity <= 0 || report.gateway.activeRouteCount >= report.gateway.routeCapacity) {
       continue;
     }
+    if (report.gateway.processorDiscoveryFresh === false) {
+      continue;
+    }
     const routeStateUrl = operatorCapabilityRouteStateUrl(profile, report);
     if (input.requireRouteStateUrl && !routeStateUrl) {
       continue;
@@ -475,6 +515,7 @@ export function selectOperatorCapabilityCandidate(
         reportId: report.reportId,
         reportExpiresAt: report.expiresAt,
         reportSigner: stored.signer,
+        publicAddresses: report.gateway.publicAddresses,
         activeRouteCount: report.gateway.activeRouteCount,
         routeCapacity: report.gateway.routeCapacity,
         routeStateUrl,
@@ -495,6 +536,92 @@ export function selectOperatorCapabilityCandidate(
   }
 
   return undefined;
+}
+
+export function selectOperatorCapacityMembers(input: SelectOperatorCapacityMembersInput): OperatorCapacityMember[] {
+  const now = input.now ?? new Date();
+  const requestedOperatorId = input.operatorId?.toLowerCase();
+  const requestedProcessorId = input.processorId?.toLowerCase();
+  const profiles = new Map(input.profiles.map((profile) => [profile.operatorId.toLowerCase(), profile]));
+  const members: OperatorCapacityMember[] = [];
+  const reports = [...input.reports].sort((left, right) => Date.parse(right.report.reportedAt) - Date.parse(left.report.reportedAt));
+
+  for (const stored of reports) {
+    const report = stored.report;
+    const operatorId = report.operator.operatorId.toLowerCase();
+    const profile = profiles.get(operatorId);
+    if (!profile || profile.status !== "active") {
+      continue;
+    }
+    if (requestedOperatorId && operatorId !== requestedOperatorId) {
+      continue;
+    }
+    if (input.gatewayId && report.operator.gatewayId !== input.gatewayId) {
+      continue;
+    }
+    if (capabilityReportExpired(report, now)) {
+      continue;
+    }
+    if (!reportSignerAllowedByProfile(profile, stored.signer)) {
+      continue;
+    }
+    if (profile.gatewayIds.length > 0 && !profile.gatewayIds.includes(report.operator.gatewayId)) {
+      continue;
+    }
+    if (report.gateway.routeCapacity <= 0 || report.gateway.activeRouteCount >= report.gateway.routeCapacity) {
+      continue;
+    }
+    if (report.gateway.processorDiscoveryFresh === false) {
+      continue;
+    }
+    const routeStateUrl = operatorCapabilityRouteStateUrl(profile, report);
+    const routeStateAvailable = Boolean(routeStateUrl) && operatorCapabilityRouteStateHealthy(report);
+    if (input.requireRouteStateUrl && !routeStateAvailable) {
+      continue;
+    }
+    const processors = expandedReportProcessors(report);
+    if (processors.length === 0) {
+      continue;
+    }
+    const upstreamAdmissionModes = operatorCapabilityUpstreamAdmissionModes(report);
+    const availableRouteSlots = Math.max(0, report.gateway.routeCapacity - report.gateway.activeRouteCount);
+    for (const processor of processors) {
+      if (requestedProcessorId && processor.processorId !== requestedProcessorId) {
+        continue;
+      }
+      if (profile.processorIds.length > 0 && !profile.processorIds.includes(processor.processorId)) {
+        continue;
+      }
+      if (profile.managerIds.length > 0 && processor.managerId && !profile.managerIds.includes(processor.managerId)) {
+        continue;
+      }
+      members.push({
+        operatorId,
+        gatewayId: report.operator.gatewayId,
+        processor: processor.address ?? processor.processorId,
+        processorId: processor.processorId,
+        managerId: processor.managerId,
+        reportId: report.reportId,
+        reportedAt: report.reportedAt,
+        expiresAt: report.expiresAt,
+        activeRouteCount: report.gateway.activeRouteCount,
+        routeCapacity: report.gateway.routeCapacity,
+        availableRouteSlots,
+        publicAddresses: report.gateway.publicAddresses,
+        routeStateAvailable,
+        routeStateHealthy: report.gateway.routeStateHealthy,
+        routeStateLastSuccessAt: report.gateway.routeStateLastSuccessAt,
+        processorDiscoveryFresh: report.gateway.processorDiscoveryFresh,
+        reportedProcessorCount: report.gateway.reportedProcessorCount,
+        supportedClasses: report.gateway.supportedClasses,
+        upstreamAdmissionModes,
+        sourceRelayId: input.sourceRelayId,
+        sourceRelayUrl: input.sourceRelayUrl
+      });
+    }
+  }
+
+  return members;
 }
 
 export function operatorCapabilityUpstreamAdmissionModes(
