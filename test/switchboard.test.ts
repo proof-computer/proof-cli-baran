@@ -2167,7 +2167,26 @@ test("emits native launch-demo progress from proof runner events", async () => {
       options?.progress?.({ type: "workflow", event: "quote_ready", details: { endpointHostname: "e-demo.example.test" } });
       options?.progress?.({ type: "workflow", event: "funding_submitted", details: { txHash: "0xfund" } });
       options?.progress?.({ type: "workflow", event: "dns_propagated", details: { hostname: "e-demo.example.test" } });
-      options?.progress?.({ type: "workflow", event: "route_not_ready", details: { reason: "runtime_https_not_ready", healthState: "certificate_requesting", healthStage: "relay_response" } });
+      options?.progress?.({
+        type: "workflow",
+        event: "route_not_ready",
+        details: {
+          reason: "runtime_https_not_ready",
+          requestId: "req_cert",
+          healthState: "certificate_requesting",
+          healthStage: "relay_request",
+          retryMs: 30000,
+          elapsedMs: 130000,
+          activationDeadlineRemainingMs: 660000,
+          healthDetails: {
+            stage: "relay_request",
+            attempt: 14,
+            hostname: "e-tsfwhxnz45g7zyc775ja.acurast.ingress.directory",
+            requestTimeoutMs: 360000
+          }
+        }
+      });
+      options?.progress?.({ type: "wait", step: "dns_propagated", detail: "waiting for gateway route activation" });
       options?.progress?.({ type: "workflow", event: "activation_window_expiring", details: { reason: "activation_window_expiring", activationDeadlineIso: "2026-06-07T12:30:00.000Z", activationDeadlineRemainingMs: 30_000 } });
       options?.progress?.({ type: "workflow", event: "route_active", details: { hostname: "e-demo.example.test" } });
       options?.progress?.({ type: "workflow", event: "registration_observed", details: { sessionId: `0x${"44".repeat(32)}` } });
@@ -2195,8 +2214,10 @@ test("emits native launch-demo progress from proof runner events", async () => {
   assert.match(captured.stdout, /Quote ready/);
   assert.match(captured.stdout, /Funded Hub session/);
   assert.match(captured.stdout, /DNS propagated/);
-  assert.match(captured.stdout, /Waiting for route readiness: runtime_https_not_ready health=certificate_requesting stage=relay_response/);
-  assert.match(captured.stdout, /Activation window: activation_window_expiring deadline=2026-06-07T12:30:00.000Z remaining=30s/);
+  assert.match(captured.stdout, /Runtime HTTPS: requesting certificate via relay attempt=14 host=e-tsfw\.\.\.ingress\.directory retry=30s elapsed=2m 10s timeout=6m deadline=11m request=req_cert/);
+  assert.doesNotMatch(captured.stdout, /Route: waiting for gateway route activation/);
+  assert.doesNotMatch(captured.stdout, /Waiting for route readiness: runtime_https_not_ready/);
+  assert.match(captured.stdout, /\[warn\] Activation window: activation_window_expiring deadline=2026-06-07T12:30:00.000Z remaining=30s/);
   assert.match(captured.stdout, /Activated route/);
   assert.match(captured.stdout, /Registered on Hub/);
   assert.match(captured.stdout, /Validation observed/);
@@ -2225,6 +2246,41 @@ test("prints runner header after externally rendered launch-demo summary", async
     captured.stdout,
     /Switchboard demo\nNetwork\s+polkadot-hub \/ Acurast mainnet\n\nSwitchboard Runner\n  \[ok\] Deployment intent: di_external_demo/
   );
+});
+
+test("coalesces repeated Runtime HTTPS certificate progress polls", async () => {
+  const runtimeHttpsDetails = (attempt: number, stage = "relay_request", extra: Record<string, unknown> = {}) => ({
+    reason: "runtime_https_not_ready",
+    healthState: "certificate_requesting",
+    healthStage: stage,
+    healthDetails: {
+      stage,
+      attempt,
+      hostname: "e-repeat.acurast.ingress.directory",
+      requestTimeoutMs: 120000,
+      ...extra
+    }
+  });
+  const captured = await captureConsole(async () => runSwitchboardLaunchDemoNative(["--yes-spend"], {
+    runner: async (_argv, options) => {
+      options?.progress?.({ type: "workflow", event: "route_not_ready", details: runtimeHttpsDetails(1) });
+      options?.progress?.({ type: "workflow", event: "route_not_ready", details: runtimeHttpsDetails(2) });
+      options?.progress?.({
+        type: "workflow",
+        event: "route_not_ready",
+        details: runtimeHttpsDetails(3, "certificate_lock", {
+          relayError: "certificate_hostname_lock_unavailable",
+          retryMs: 30000
+        })
+      });
+    }
+  }));
+
+  assert.equal(captured.result, 0);
+  assert.equal(matchCount(captured.stdout, /Runtime HTTPS:/g), 2);
+  assert.match(captured.stdout, /Runtime HTTPS: requesting certificate via relay attempt=1/);
+  assert.doesNotMatch(captured.stdout, /Runtime HTTPS: requesting certificate via relay attempt=2/);
+  assert.match(captured.stdout, /Runtime HTTPS: hostname lock busy attempt=3 .*retry=30s/);
 });
 
 test("prints runner header after externally rendered deploy summary", async () => {

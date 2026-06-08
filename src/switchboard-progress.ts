@@ -47,6 +47,7 @@ interface ProgressLine {
   label: string;
   detail?: string;
   section?: SwitchboardProgressSection;
+  throttleKey?: string;
 }
 
 export function createSwitchboardDeployProgressReporter(input: {
@@ -65,6 +66,7 @@ export function createSwitchboardDeployProgressReporter(input: {
     preparedJobLines: new Set<string>(),
     acurastEnvironmentSet: false,
     acurastSchedule: undefined as Record<string, unknown> | undefined,
+    runtimeHttpsBlocking: false,
     pendingJobStartWait: undefined as SwitchboardProgressEvent | undefined
   };
   const env = input.env ?? process.env;
@@ -114,6 +116,7 @@ function updateProgressState(
   state: {
     acurastEnvironmentSet: boolean;
     acurastSchedule?: Record<string, unknown>;
+    runtimeHttpsBlocking?: boolean;
   }
 ): void {
   if (isAcurastEnvironmentSet(event)) {
@@ -122,6 +125,18 @@ function updateProgressState(
   if (event.type === "acurast-sdk" && event.sdkStatus === "Prepared") {
     const schedule = acurastSdkSchedule(event.data);
     if (schedule) state.acurastSchedule = schedule;
+  }
+  if (event.type === "workflow" && event.event === "route_not_ready") {
+    state.runtimeHttpsBlocking = isRuntimeHttpsCertificateBlocker(recordValue(event.details));
+  }
+  if (
+    event.type === "workflow" &&
+    (event.event === "route_active" ||
+      event.event === "group_route_active" ||
+      event.event === "gateway_upstream_admitted" ||
+      event.event === "gateway_upstream_admission_requested")
+  ) {
+    state.runtimeHttpsBlocking = false;
   }
 }
 
@@ -133,11 +148,13 @@ function logProgressEvent(
     lastWaitAt: Map<string, number>;
     preparedJobLines: Set<string>;
     acurastSchedule?: Record<string, unknown>;
+    runtimeHttpsBlocking?: boolean;
   },
   waitIntervalMs: number
 ): void {
   const line = progressEventLine(withProgressState(event, state));
   if (!line) return;
+  if (state.runtimeHttpsBlocking && isGenericRouteWaitLine(event, line)) return;
   if (line.label === "Acurast SDK prepared job") {
     const key = `${line.label}:${line.detail ?? ""}`;
     if (state.preparedJobLines.has(key)) return;
@@ -391,7 +408,16 @@ function workflowProgressLine(
     case "route_active":
     case "group_route_active":
       return { status: "ok", label: "Activated route", detail: routeProgressDetail(record), section: section ?? "Switchboard Runner" };
-    case "route_not_ready":
+    case "route_not_ready": {
+      if (isRuntimeHttpsCertificateBlocker(record)) {
+        return {
+          status: "wait",
+          label: "Runtime HTTPS",
+          detail: runtimeHttpsProgressDetail(record),
+          section: section ?? "Switchboard Runner",
+          throttleKey: runtimeHttpsThrottleKey(record)
+        };
+      }
       return {
         status: "wait",
         label: "Waiting for route readiness",
@@ -402,10 +428,11 @@ function workflowProgressLine(
         ].filter(Boolean).join(" ") || undefined,
         section: section ?? "Switchboard Runner"
       };
+    }
     case "activation_window_expiring":
     case "activation_window_expired":
       return {
-        status: "error",
+        status: event === "activation_window_expiring" ? "warn" : "error",
         label: "Activation window",
         detail: activationWindowProgressDetail(record),
         section: section ?? "Switchboard Runner"
@@ -475,6 +502,9 @@ function jobStartWaitDetail(schedule: Record<string, unknown> | undefined): stri
 }
 
 function waitThrottleKey(line: ProgressLine): string {
+  if (line.throttleKey) {
+    return line.throttleKey;
+  }
   if (line.label !== "Job start") {
     return `${line.label}:${line.detail ?? ""}`;
   }
@@ -489,6 +519,10 @@ function jobStartWaitPhase(detail: string | undefined): string {
     return "past-max-start";
   }
   return detail ?? "";
+}
+
+function isGenericRouteWaitLine(event: SwitchboardProgressEvent, line: ProgressLine): boolean {
+  return event.type === "wait" && (event.step ?? event.event) === "dns_propagated" && line.label === "Route";
 }
 
 function logProgressLine(
@@ -542,6 +576,84 @@ function routeProgressDetail(details: Record<string, unknown>): string | undefin
   return stringRecordField(details, "hostname")
     ? `host=${stringRecordField(details, "hostname")}`
     : memberCountDetail(details, "activeMembers") ?? stringRecordField(details, "status");
+}
+
+function isRuntimeHttpsCertificateBlocker(details: Record<string, unknown>): boolean {
+  if (stringRecordField(details, "reason") !== "runtime_https_not_ready") {
+    return false;
+  }
+  const healthDetails = recordValue(details.healthDetails);
+  const healthState = stringRecordField(details, "healthState");
+  const stage = stringRecordField(healthDetails, "stage") ?? stringRecordField(details, "healthStage");
+  return healthState === "certificate_requesting" || Boolean(stage?.startsWith("certificate_"));
+}
+
+function runtimeHttpsProgressDetail(details: Record<string, unknown>): string | undefined {
+  const healthDetails = recordValue(details.healthDetails);
+  const stage = stringRecordField(healthDetails, "stage") ?? stringRecordField(details, "healthStage");
+  const relayError = stringRecordField(healthDetails, "relayError") ?? stringRecordField(details, "relayError");
+  const retryMs = numberRecordField(healthDetails, "retryMs") ?? numberRecordField(details, "retryMs") ?? numberRecordField(details, "retryAfterMs");
+  const elapsedMs = numberRecordField(healthDetails, "elapsedMs") ?? numberRecordField(details, "elapsedMs");
+  const requestTimeoutMs = numberRecordField(healthDetails, "requestTimeoutMs") ?? numberRecordField(details, "requestTimeoutMs");
+  const remainingMs =
+    numberRecordField(healthDetails, "activationDeadlineRemainingMs") ??
+    numberRecordField(details, "activationDeadlineRemainingMs");
+  const attempt = numberRecordField(healthDetails, "attempt") ?? numberRecordField(details, "attempt");
+  const hostname = stringRecordField(healthDetails, "hostname") ?? stringRecordField(details, "hostname");
+  const status = numberRecordField(healthDetails, "status") ?? numberRecordField(details, "httpStatus");
+  const requestId = stringRecordField(details, "requestId") ?? stringRecordField(healthDetails, "requestId");
+  const action = runtimeHttpsStageLabel(stage, relayError);
+  return [
+    action,
+    attempt !== undefined ? `attempt=${attempt}` : undefined,
+    hostname ? `host=${compactHostname(hostname)}` : undefined,
+    retryMs !== undefined ? `retry=${formatProgressDuration(retryMs)}` : undefined,
+    elapsedMs !== undefined ? `elapsed=${formatProgressDuration(elapsedMs)}` : undefined,
+    requestTimeoutMs !== undefined ? `timeout=${formatProgressDuration(requestTimeoutMs)}` : undefined,
+    remainingMs !== undefined ? `deadline=${formatProgressDuration(remainingMs)}` : undefined,
+    status !== undefined ? `status=${status}` : undefined,
+    relayError ? `relay=${relayError}` : undefined,
+    requestId ? `request=${requestId}` : undefined
+  ].filter(Boolean).join(" ") || undefined;
+}
+
+function runtimeHttpsStageLabel(stage: string | undefined, relayError: string | undefined): string {
+  if (relayError === "certificate_hostname_lock_unavailable" || stage === "certificate_lock") {
+    return "hostname lock busy";
+  }
+  switch (stage) {
+    case "certificate_request":
+    case "csr_generation":
+      return "preparing certificate";
+    case "request_signing":
+      return "signing certificate request";
+    case "relay_request":
+      return "requesting certificate via relay";
+    case "relay_response":
+      return "awaiting certificate relay response";
+    case "acme_issuance":
+      return "waiting for ACME issuance";
+    default:
+      return stage ? `certificate ${stage}` : "waiting for certificate";
+  }
+}
+
+function runtimeHttpsThrottleKey(details: Record<string, unknown>): string {
+  const healthDetails = recordValue(details.healthDetails);
+  const stage = stringRecordField(healthDetails, "stage") ?? stringRecordField(details, "healthStage") ?? "";
+  const relayError = stringRecordField(healthDetails, "relayError") ?? stringRecordField(details, "relayError") ?? "";
+  const retryMs = numberRecordField(healthDetails, "retryMs") ?? numberRecordField(details, "retryMs") ?? numberRecordField(details, "retryAfterMs") ?? "";
+  const status = numberRecordField(healthDetails, "status") ?? numberRecordField(details, "httpStatus") ?? "";
+  return `Runtime HTTPS:${stage}:${relayError}:${retryMs}:${status}`;
+}
+
+function compactHostname(value: string): string {
+  if (value.length <= 34) {
+    return value;
+  }
+  const labels = value.split(".");
+  const suffix = labels.length >= 2 ? labels.slice(-2).join(".") : value.slice(-12);
+  return `${value.slice(0, 6)}...${suffix}`;
 }
 
 function activationWindowProgressDetail(details: Record<string, unknown>): string | undefined {
