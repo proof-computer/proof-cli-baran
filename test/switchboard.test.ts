@@ -2089,8 +2089,8 @@ test("requires launch-demo package with stable home-relay observability", () => 
   const requirement = launchDemoRuntimePackageRequirement();
 
   assert.equal(requirement.package, "@proof-computer/switchboard-express-demo");
-  assert.equal(requirement.packageSpec, "github:proof-computer/switchboard-express-demo#v0.2.6");
-  assert.equal(requirement.minVersion, "0.2.6");
+  assert.equal(requirement.packageSpec, "github:proof-computer/switchboard-express-demo#v0.2.7");
+  assert.equal(requirement.minVersion, "0.2.7");
   assert.ok(requirement.capabilities.includes("stable_home_relay_observability"));
 });
 
