@@ -158,9 +158,16 @@ const DEFAULT_LAUNCH_DEMO_SCHEDULE_BUFFER_MINUTES = 0;
 const DEFAULT_LAUNCH_DEMO_START_DELAY_MS = 180_000;
 const DEFAULT_LAUNCH_DEMO_MAX_COST_PER_EXECUTION = "40000000000";
 const DEFAULT_LAUNCH_DEMO_PROCESSOR_MAX_AGE_SECONDS = 900;
-const DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC = "github:proof-computer/switchboard-express-demo#v0.2.5";
-const MIN_LAUNCH_DEMO_RUNTIME_VERSION = "0.2.5";
+const DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC = "github:proof-computer/switchboard-express-demo#v0.2.6";
+const MIN_LAUNCH_DEMO_RUNTIME_VERSION = "0.2.6";
 const MIN_LAUNCH_DEMO_RUNTIME_PACKAGE_VERSION = "0.1.5";
+const LAUNCH_DEMO_RUNTIME_CAPABILITIES = [
+  "gateway_upstream_admission",
+  "certificate_prep_progress",
+  "ecdsa_p256_csr",
+  "post_certificate_readiness_progress",
+  "stable_home_relay_observability"
+];
 const LAUNCH_DEMO_ENTRYPOINT = "src/server.ts";
 const SSH_TEMPLATE_NAME = "ssh";
 const SSH_TEMPLATE_DISTRO = "ubuntu";
@@ -3005,19 +3012,36 @@ async function launchDemoPackageMetadata(packageSpec: string): Promise<{ name?: 
   };
 }
 
+export function launchDemoRuntimePackageRequirement(): {
+  package: string;
+  packageSpec: string;
+  minVersion: string;
+  minRuntimePackageVersion: string;
+  capabilities: string[];
+} {
+  return {
+    package: "@proof-computer/switchboard-express-demo",
+    packageSpec: DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC,
+    minVersion: MIN_LAUNCH_DEMO_RUNTIME_VERSION,
+    minRuntimePackageVersion: MIN_LAUNCH_DEMO_RUNTIME_PACKAGE_VERSION,
+    capabilities: [...LAUNCH_DEMO_RUNTIME_CAPABILITIES]
+  };
+}
+
 function assertLaunchDemoRuntimePackageFresh(project: LaunchDemoProject, flags: Map<string, string | boolean>): void {
   if (!launchDemoPackageIsKnownExpressDemo(project) || !project.packageVersion) {
     return;
   }
-  const comparison = compareSemver(project.packageVersion, MIN_LAUNCH_DEMO_RUNTIME_VERSION);
+  const requirement = launchDemoRuntimePackageRequirement();
+  const comparison = compareSemver(project.packageVersion, requirement.minVersion);
   if (comparison === undefined || comparison >= 0) {
     return;
   }
 
   const error =
     `SB_LAUNCH_DEMO_RUNTIME_STALE: launch-demo package ${project.packageSpec} resolves to ` +
-    `@proof-computer/switchboard-express-demo v${project.packageVersion}, which lacks the current runtime support for gateway upstream admission, bounded certificate-prep progress with ECDSA CSRs, and post-certificate readiness progress. ` +
-    `Use ${DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC}, or publish a demo package built with @proof-computer/switchboard-runtime >= ${MIN_LAUNCH_DEMO_RUNTIME_PACKAGE_VERSION}.`;
+    `${requirement.package} v${project.packageVersion}, which lacks the current runtime support for gateway upstream admission, bounded certificate-prep progress with ECDSA CSRs, post-certificate readiness progress, and stable home-relay validator observability. ` +
+    `Use ${requirement.packageSpec}, or publish a demo package v${requirement.minVersion} or newer built with @proof-computer/switchboard-runtime >= ${requirement.minRuntimePackageVersion}.`;
   if (boolFlag(flags, "json")) {
     const handled = new Error(error);
     writeOutput(flags, {
@@ -3027,11 +3051,11 @@ function assertLaunchDemoRuntimePackageFresh(project: LaunchDemoProject, flags: 
       error,
       demoProject: project,
       required: {
-        package: "@proof-computer/switchboard-express-demo",
-        minVersion: MIN_LAUNCH_DEMO_RUNTIME_VERSION,
-        minRuntimePackageVersion: MIN_LAUNCH_DEMO_RUNTIME_PACKAGE_VERSION,
-        capabilities: ["gateway_upstream_admission", "certificate_prep_progress", "ecdsa_p256_csr", "post_certificate_readiness_progress"],
-        packageSpec: DEFAULT_LAUNCH_DEMO_PACKAGE_SPEC
+        package: requirement.package,
+        minVersion: requirement.minVersion,
+        minRuntimePackageVersion: requirement.minRuntimePackageVersion,
+        capabilities: requirement.capabilities,
+        packageSpec: requirement.packageSpec
       }
     }, () => undefined);
     markErrorOutputHandled(handled);

@@ -10,6 +10,7 @@ import test from "node:test";
 
 import {
   createDeployWorkflowReadbackRetryFetch,
+  launchDemoRuntimePackageRequirement,
   readLaunchDemoCapacity,
   selectPinnedDeployCapacity
 } from "../src/switchboard-core/cli/src/index.js";
@@ -2082,6 +2083,15 @@ test("keeps native launch-demo json output free of progress text", async () => {
   assert.doesNotMatch(captured.stdout, /npm/);
   assert.doesNotMatch(captured.stdout, /Relay readback/);
   assert.deepEqual(JSON.parse(captured.stdout), { ok: true, action: "launch-demo" });
+});
+
+test("requires launch-demo package with stable home-relay observability", () => {
+  const requirement = launchDemoRuntimePackageRequirement();
+
+  assert.equal(requirement.package, "@proof-computer/switchboard-express-demo");
+  assert.equal(requirement.packageSpec, "github:proof-computer/switchboard-express-demo#v0.2.6");
+  assert.equal(requirement.minVersion, "0.2.6");
+  assert.ok(requirement.capabilities.includes("stable_home_relay_observability"));
 });
 
 test("suppresses pre-start job polling and throttles job-start waits", async () => {
