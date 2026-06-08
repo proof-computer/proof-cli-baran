@@ -1845,6 +1845,41 @@ test("reads operator-capacity members as the authoritative capacity surface", as
   });
 });
 
+test("preserves operator-capacity readiness and peer diagnostics", async () => {
+  const member = testCapacityMember({ sourceRelayUrl: "https://relay-peer.example" });
+  await withOperatorCapacityServer({
+    ok: true,
+    peerReadThrough: true,
+    dataReadiness: {
+      status: "partial",
+      expectedGatewayCount: 3,
+      selectableGatewayCount: 1,
+      missingGatewayIds: ["switchboard-az-02", "switchboard-az-03"]
+    },
+    peerResults: [
+      {
+        relayId: "relay-peer",
+        apiBaseUrl: "https://relay-peer.example",
+        ok: true,
+        memberCount: 1,
+        excludedMemberCount: 0,
+        reportCount: 1
+      }
+    ],
+    members: [member],
+    latest: [testCapacityReport({ processor: TEST_LEGACY_PROCESSOR, reportId: "legacy-report" })]
+  }, async (relayUrl) => {
+    const snapshot = await readLaunchDemoCapacity(relayUrl);
+
+    assert.equal(snapshot.peerReadThrough, true);
+    assert.equal(snapshot.dataReadiness?.status, "partial");
+    assert.deepEqual(snapshot.dataReadiness?.missingGatewayIds, ["switchboard-az-02", "switchboard-az-03"]);
+    assert.equal(snapshot.peerResults?.[0]?.relayId, "relay-peer");
+    assert.equal(snapshot.relayResults?.[0]?.relayUrl, relayUrl);
+    assert.equal(snapshot.members[0]?.sourceRelayUrl, "https://relay-peer.example");
+  });
+});
+
 test("surfaces gateway-health capacity exclusions from operator-capacity", async () => {
   const excluded = testCapacityMember({
     gatewayHealth: {
@@ -1879,6 +1914,69 @@ test("surfaces gateway-health capacity exclusions from operator-capacity", async
         gatewayId: TEST_GATEWAY_ID,
         processor: TEST_PROCESSOR
       }),
+      /gateway-test-1: gateway public edge failed: tcp_refused/u
+    );
+  });
+});
+
+test("adds relay readiness details to capacity selection failures", async () => {
+  await withOperatorCapacityServer({
+    ok: true,
+    peerReadThrough: true,
+    dataReadiness: {
+      status: "partial",
+      expectedGatewayCount: 3,
+      selectableGatewayCount: 0,
+      missingGatewayIds: ["switchboard-az-02", "switchboard-az-03"]
+    },
+    peerResults: [
+      {
+        relayId: "relay-peer",
+        apiBaseUrl: "https://relay-peer.example",
+        ok: true,
+        memberCount: 0,
+        excludedMemberCount: 1,
+        reportCount: 1
+      }
+    ],
+    members: [],
+    excludedMembers: [
+      testCapacityMember({
+        gatewayHealth: {
+          status: "unavailable",
+          eligible: false,
+          weight: 0,
+          lastCheckedAt: "2026-06-08T12:00:00.000Z",
+          lastFailureReason: "tcp_refused",
+          nextCheckIntervalSeconds: 300,
+          distinctValidatorCount: 1
+        }
+      })
+    ],
+    latest: []
+  }, async (relayUrl) => {
+    await assert.rejects(
+      async () => {
+        try {
+          await selectPinnedDeployCapacity({
+            relayUrl,
+            network: "mainnet",
+            operatorId: TEST_OPERATOR_ID,
+            gatewayId: TEST_GATEWAY_ID,
+            processor: TEST_PROCESSOR
+          });
+        } catch (error) {
+          assert.match(error instanceof Error ? error.message : String(error), /relay capacity partial after peer read-through/u);
+          assert.match(error instanceof Error ? error.message : String(error), /missing switchboard-az-02, switchboard-az-03/u);
+          assert.equal((error as { details?: Record<string, unknown> }).details?.code, "capacity_unavailable");
+          assert.equal((error as { details?: Record<string, unknown> }).details?.peerReadThrough, true);
+          assert.equal(
+            ((error as { details?: { gatewayHealthExclusions?: Array<Record<string, unknown>> } }).details?.gatewayHealthExclusions ?? [])[0]?.reason,
+            "gateway public edge failed: tcp_refused"
+          );
+          throw error;
+        }
+      },
       /gateway-test-1: gateway public edge failed: tcp_refused/u
     );
   });

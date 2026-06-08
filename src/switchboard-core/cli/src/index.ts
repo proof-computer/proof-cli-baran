@@ -2487,6 +2487,21 @@ type LaunchDemoCapacityMember = OperatorCapacityMember & {
 };
 
 type LaunchDemoGatewayHealth = NonNullable<OperatorCapacityMember["gatewayHealth"]>;
+type LaunchDemoRelayDataReadiness = Record<string, unknown>;
+type LaunchDemoCapacityPeerResult = Record<string, unknown>;
+
+interface LaunchDemoCapacityRelayDiagnostic {
+  relayUrl: string;
+  ok: boolean;
+  error?: string;
+  memberAware?: boolean;
+  memberCount?: number;
+  excludedMemberCount?: number;
+  reportCount?: number;
+  dataReadiness?: LaunchDemoRelayDataReadiness;
+  peerReadThrough?: boolean;
+  peerResults?: LaunchDemoCapacityPeerResult[];
+}
 
 interface LaunchDemoCapacitySnapshot {
   relayUrl?: string;
@@ -2494,11 +2509,59 @@ interface LaunchDemoCapacitySnapshot {
   members: LaunchDemoCapacityMember[];
   excludedMembers: LaunchDemoCapacityMember[];
   reports: LaunchDemoCapacityReport[];
+  dataReadiness?: LaunchDemoRelayDataReadiness;
+  peerReadThrough?: boolean;
+  peerResults?: LaunchDemoCapacityPeerResult[];
+  relayResults?: LaunchDemoCapacityRelayDiagnostic[];
 }
 
 type LaunchDemoCapacityRelayResult =
-  | { ok: true; relayUrl: string; memberAware: boolean; members: LaunchDemoCapacityMember[]; excludedMembers: LaunchDemoCapacityMember[]; reports: LaunchDemoCapacityReport[] }
-  | { ok: false; relayUrl: string; error: string };
+  | {
+      ok: true;
+      relayUrl: string;
+      memberAware: boolean;
+      members: LaunchDemoCapacityMember[];
+      excludedMembers: LaunchDemoCapacityMember[];
+      reports: LaunchDemoCapacityReport[];
+      dataReadiness?: LaunchDemoRelayDataReadiness;
+      peerReadThrough?: boolean;
+      peerResults?: LaunchDemoCapacityPeerResult[];
+    }
+  | {
+      ok: false;
+      relayUrl: string;
+      error: string;
+      dataReadiness?: LaunchDemoRelayDataReadiness;
+      peerReadThrough?: boolean;
+      peerResults?: LaunchDemoCapacityPeerResult[];
+    };
+
+interface LaunchDemoCapacitySelectionFailureDetails {
+  code: string;
+  source: string;
+  scope?: string;
+  checked: string[];
+  availableProcessorCount: number;
+  requestedProcessorCount: number;
+  minReady?: number;
+  memberAware: boolean;
+  memberCount: number;
+  excludedMemberCount: number;
+  reportCount: number;
+  relayUrls: string[];
+  dataReadiness?: LaunchDemoRelayDataReadiness;
+  peerReadThrough?: boolean;
+  peerResults?: LaunchDemoCapacityPeerResult[];
+  relayResults?: LaunchDemoCapacityRelayDiagnostic[];
+  gatewayHealthExclusions: Array<Record<string, unknown>>;
+}
+
+class LaunchDemoCapacitySelectionError extends Error {
+  constructor(message: string, readonly details: LaunchDemoCapacitySelectionFailureDetails) {
+    super(message);
+    this.name = "LaunchDemoCapacitySelectionError";
+  }
+}
 
 type LaunchDemoQuotePreview =
   | {
@@ -2567,18 +2630,43 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
     optionalEnv("ACURAST_MAX_COST_PER_EXECUTION") ??
     DEFAULT_LAUNCH_DEMO_MAX_COST_PER_EXECUTION;
   const privateAcurastEnv = acurastCliCredentialEnv(runtime, acurastNetwork);
-  const selection = await selectLaunchDemoCapacity({
-    relayUrl,
-    relayUrls,
-    network: acurastNetwork,
-    durationMinutes,
-    scheduleBufferMinutes,
-    processorCount: requestedProcessorCount,
-    minReady: minReadyProcessors,
-    operatorId: stringFlag(flags, "operator-id"),
-    gatewayId: stringFlag(flags, "gateway-id"),
-    processor: stringFlag(flags, "processor")
-  });
+  let selection: LaunchDemoCapacitySelection;
+  try {
+    selection = await selectLaunchDemoCapacity({
+      relayUrl,
+      relayUrls,
+      network: acurastNetwork,
+      durationMinutes,
+      scheduleBufferMinutes,
+      processorCount: requestedProcessorCount,
+      minReady: minReadyProcessors,
+      operatorId: stringFlag(flags, "operator-id"),
+      gatewayId: stringFlag(flags, "gateway-id"),
+      processor: stringFlag(flags, "processor")
+    });
+  } catch (error) {
+    if (boolFlag(flags, "json") && isLaunchDemoCapacitySelectionError(error)) {
+      writeOutput(flags, {
+        ok: false,
+        action: "launch-demo",
+        relayUrl,
+        relayCandidates: relayUrls,
+        target: target.name,
+        acurastNetwork,
+        durationMinutes,
+        processorCount: requestedProcessorCount,
+        minReadyProcessors,
+        failure: {
+          stage: "capacity_selection",
+          code: error.details.code,
+          message: error.message
+        },
+        capacity: error.details
+      }, () => undefined);
+      markErrorOutputHandled(error);
+    }
+    throw error;
+  }
   launchDemoDebug(`selected ${selection.processors.length} processor candidate(s)`);
   const operationRelayUrl = selection.sourceRelayUrl ?? relayUrl;
   await assertSelectedCapacityStillAdvertised(selection, operationRelayUrl);
@@ -3296,6 +3384,7 @@ async function selectLaunchDemoCapacity(input: {
   const relayUrls = input.relayUrls?.length ? input.relayUrls : [input.relayUrl];
   const capacity = await readLaunchDemoCapacity(relayUrls);
   const errors: string[] = [];
+  collectRelayCapacityReadinessDiagnostics(capacity, errors);
   const requestedOperatorId = input.operatorId?.toLowerCase();
   const requestedProcessorId = input.processor ? processorRefToId(input.processor) : undefined;
   if (input.processor && !requestedProcessorId) {
@@ -3330,7 +3419,22 @@ async function selectLaunchDemoCapacity(input: {
       ].filter(Boolean).join(", ");
       const scope = pinned ? ` for ${pinned}` : "";
       const source = relayUrls.length === 1 ? relayUrls[0] : `${relayUrls.length} control relays`;
-      throw new Error(`Only ${filteredCandidates.length}/${input.processorCount} launch-demo processors are currently available from ${source}${scope}.${reason}`);
+      throw new LaunchDemoCapacitySelectionError(
+        `Only ${filteredCandidates.length}/${input.processorCount} launch-demo processors are currently available from ${source}${scope}.${reason}`,
+        launchDemoCapacitySelectionFailureDetails({
+          capacity,
+          relayUrls,
+          source,
+          scope: scope ? scope.slice(" for ".length) : undefined,
+          errors,
+          availableProcessorCount: filteredCandidates.length,
+          requestedProcessorCount: input.processorCount,
+          minReady: input.minReady,
+          operatorId: input.operatorId,
+          gatewayId: input.gatewayId,
+          requestedProcessorId
+        })
+      );
     }
     const selectedMembers = selectLaunchDemoCandidatePool(filteredCandidates, input.processorCount);
     const selectedGateways = new Set(selectedMembers.map((member) => member.gatewayId));
@@ -3431,7 +3535,22 @@ async function selectLaunchDemoCapacity(input: {
     ].filter(Boolean).join(", ");
     const scope = pinned ? ` for ${pinned}` : "";
     const source = relayUrls.length === 1 ? relayUrls[0] : `${relayUrls.length} control relays`;
-    throw new Error(`Only ${filteredCandidates.length}/${input.processorCount} launch-demo processors are currently available from ${source}${scope}.${reason}`);
+    throw new LaunchDemoCapacitySelectionError(
+      `Only ${filteredCandidates.length}/${input.processorCount} launch-demo processors are currently available from ${source}${scope}.${reason}`,
+      launchDemoCapacitySelectionFailureDetails({
+        capacity,
+        relayUrls,
+        source,
+        scope: scope ? scope.slice(" for ".length) : undefined,
+        errors,
+        availableProcessorCount: filteredCandidates.length,
+        requestedProcessorCount: input.processorCount,
+        minReady: input.minReady,
+        operatorId: input.operatorId,
+        gatewayId: input.gatewayId,
+        requestedProcessorId
+      })
+    );
   }
 
   const selectedMembers = selectLaunchDemoCandidatePool(filteredCandidates, input.processorCount);
@@ -3575,6 +3694,7 @@ async function selectDeployCapacity(input: {
   const relayUrls = input.relayUrls?.length ? input.relayUrls : [input.relayUrl];
   const capacity = await readLaunchDemoCapacity(relayUrls);
   const errors: string[] = [];
+  collectRelayCapacityReadinessDiagnostics(capacity, errors);
   const candidates: LaunchDemoMemberSelection[] = [];
 
   if (capacity.memberAware) {
@@ -3605,7 +3725,22 @@ async function selectDeployCapacity(input: {
         input.processor ? `processor ${input.processor}` : undefined
       ].filter(Boolean).join(", ") || "available operator capacity";
       const checked = errors.length > 0 ? ` Checked: ${errors.slice(0, 5).join("; ")}` : "";
-      throw new Error(`No route-state-capable deploy capacity matched ${request}.${checked}`);
+      const source = relayUrls.length === 1 ? relayUrls[0] : `${relayUrls.length} control relays`;
+      throw new LaunchDemoCapacitySelectionError(
+        `No route-state-capable deploy capacity matched ${request}.${checked}`,
+        launchDemoCapacitySelectionFailureDetails({
+          capacity,
+          relayUrls,
+          source,
+          scope: request,
+          errors,
+          availableProcessorCount: filteredCandidates.length,
+          requestedProcessorCount: 1,
+          operatorId: input.operatorId,
+          gatewayId: input.gatewayId,
+          requestedProcessorId
+        })
+      );
     }
     return launchDemoSelectionFromMembers([{ ...selected, memberId: "member-1" }]);
   }
@@ -3677,7 +3812,22 @@ async function selectDeployCapacity(input: {
       input.processor ? `processor ${input.processor}` : undefined
     ].filter(Boolean).join(", ") || "available operator capacity";
     const checked = errors.length > 0 ? ` Checked: ${errors.slice(0, 5).join("; ")}` : "";
-    throw new Error(`No route-state-capable deploy capacity matched ${request}.${checked}`);
+    const source = relayUrls.length === 1 ? relayUrls[0] : `${relayUrls.length} control relays`;
+    throw new LaunchDemoCapacitySelectionError(
+      `No route-state-capable deploy capacity matched ${request}.${checked}`,
+      launchDemoCapacitySelectionFailureDetails({
+        capacity,
+        relayUrls,
+        source,
+        scope: request,
+        errors,
+        availableProcessorCount: filteredCandidates.length,
+        requestedProcessorCount: 1,
+        operatorId: input.operatorId,
+        gatewayId: input.gatewayId,
+        requestedProcessorId
+      })
+    );
   }
   return launchDemoSelectionFromMembers([{ ...selected, memberId: "member-1" }]);
 }
@@ -3848,11 +3998,17 @@ export async function readLaunchDemoCapacity(relayUrls: string | string[]): Prom
   const successfulMembers = successful.flatMap((result) => result.members);
   const successfulExcludedMembers = successful.flatMap((result) => result.excludedMembers);
   if (memberAware || successfulReports.length > 0) {
+    const relayResults = results.map(launchDemoCapacityRelayDiagnostic);
+    const primaryReadiness = launchDemoCapacityPrimaryReadiness(relayResults);
     return {
       memberAware,
       members: newestLaunchDemoMembersBySelectionKey(successfulMembers),
       excludedMembers: newestLaunchDemoMembersBySelectionKey(successfulExcludedMembers),
-      reports: newestLaunchDemoReportsByGateway(successfulReports)
+      reports: newestLaunchDemoReportsByGateway(successfulReports),
+      dataReadiness: primaryReadiness,
+      peerReadThrough: successful.some((result) => result.peerReadThrough === true) || undefined,
+      peerResults: successful.flatMap((result) => result.peerResults ?? []),
+      relayResults
     };
   }
   const details = results
@@ -3877,7 +4033,11 @@ async function readLaunchDemoCapacitySnapshotFromRelay(relayUrl: string): Promis
       memberAware: result.memberAware,
       members: result.members,
       excludedMembers: result.excludedMembers,
-      reports: result.reports
+      reports: result.reports,
+      dataReadiness: result.dataReadiness,
+      peerReadThrough: result.peerReadThrough,
+      peerResults: result.peerResults,
+      relayResults: [launchDemoCapacityRelayDiagnostic(result)]
     };
   }
   throw new Error(`Operator capacity lookup failed at ${relayUrl}: ${result.error}`);
@@ -3903,6 +4063,9 @@ async function readLaunchDemoCapacityFromRelay(relayUrl: string): Promise<Launch
         memberAware: false,
         members: [],
         excludedMembers: [],
+        dataReadiness: readinessRecord(parsed),
+        peerReadThrough: booleanRecordField(parsed, "peerReadThrough") || undefined,
+        peerResults: launchDemoCapacityPeerResults(parsed),
         reports: (await readLegacyLaunchDemoCapabilityReports(relayUrl)).map((report) => ({ ...report, sourceRelayUrl: relayUrl }))
       };
     }
@@ -3912,13 +4075,17 @@ async function readLaunchDemoCapacityFromRelay(relayUrl: string): Promise<Launch
       return {
         ok: false,
         relayUrl,
-        error: reason ? `${error}:${reason}` : `${error}:${body.slice(0, 300)}`
+        error: reason ? `${error}:${reason}` : `${error}:${body.slice(0, 300)}`,
+        dataReadiness: readinessRecord(parsed),
+        peerReadThrough: booleanRecordField(parsed, "peerReadThrough") || undefined,
+        peerResults: launchDemoCapacityPeerResults(parsed)
       };
     }
     const memberAware = Array.isArray(parsed.members);
     const memberValues = memberAware ? parsed.members as unknown[] : [];
     const excludedMemberValues = Array.isArray(parsed.excludedMembers) ? parsed.excludedMembers as unknown[] : [];
     const values = Array.isArray(parsed.latest) ? parsed.latest : Array.isArray(parsed.reports) ? parsed.reports : [];
+    const peerResults = launchDemoCapacityPeerResults(parsed);
     return {
       ok: true,
       relayUrl,
@@ -3931,7 +4098,10 @@ async function readLaunchDemoCapacityFromRelay(relayUrl: string): Promise<Launch
         .map((member) => ({ ...member, sourceRelayUrl: member.sourceRelayUrl ?? relayUrl })),
       reports: values
         .filter(isLaunchDemoCapacityReport)
-        .map((report) => ({ ...report, sourceRelayUrl: relayUrl }))
+        .map((report) => ({ ...report, sourceRelayUrl: report.sourceRelayUrl ?? relayUrl })),
+      dataReadiness: readinessRecord(parsed),
+      peerReadThrough: booleanRecordField(parsed, "peerReadThrough") || undefined,
+      peerResults
     };
   } catch (error) {
     return {
@@ -3940,6 +4110,54 @@ async function readLaunchDemoCapacityFromRelay(relayUrl: string): Promise<Launch
       error: error instanceof Error ? error.message : String(error)
     };
   }
+}
+
+function readinessRecord(value: unknown): LaunchDemoRelayDataReadiness | undefined {
+  const readiness = recordValue(recordValue(value).dataReadiness);
+  return Object.keys(readiness).length > 0 ? readiness : undefined;
+}
+
+function launchDemoCapacityPeerResults(value: unknown): LaunchDemoCapacityPeerResult[] | undefined {
+  const peerResults = recordValue(value).peerResults;
+  if (!Array.isArray(peerResults)) {
+    return undefined;
+  }
+  const records = peerResults
+    .map((item) => recordValue(item))
+    .filter((item) => Object.keys(item).length > 0);
+  return records.length > 0 ? records : undefined;
+}
+
+function launchDemoCapacityRelayDiagnostic(result: LaunchDemoCapacityRelayResult): LaunchDemoCapacityRelayDiagnostic {
+  if (!result.ok) {
+    return {
+      relayUrl: result.relayUrl,
+      ok: false,
+      error: result.error,
+      dataReadiness: result.dataReadiness,
+      peerReadThrough: result.peerReadThrough,
+      peerResults: result.peerResults
+    };
+  }
+  return {
+    relayUrl: result.relayUrl,
+    ok: true,
+    memberAware: result.memberAware,
+    memberCount: result.members.length,
+    excludedMemberCount: result.excludedMembers.length,
+    reportCount: result.reports.length,
+    dataReadiness: result.dataReadiness,
+    peerReadThrough: result.peerReadThrough,
+    peerResults: result.peerResults
+  };
+}
+
+function launchDemoCapacityPrimaryReadiness(results: LaunchDemoCapacityRelayDiagnostic[]): LaunchDemoRelayDataReadiness | undefined {
+  return (
+    results.find((result) => stringRecordField(result.dataReadiness, "status") === "partial")?.dataReadiness ??
+    results.find((result) => stringRecordField(result.dataReadiness, "status") === "stale")?.dataReadiness ??
+    results.find((result) => result.dataReadiness)?.dataReadiness
+  );
 }
 
 function newestLaunchDemoReportsByGateway(reports: LaunchDemoCapacityReport[]): LaunchDemoCapacityReport[] {
@@ -4133,6 +4351,120 @@ function gatewayHealthExclusionReason(health: LaunchDemoGatewayHealth | undefine
   }
   const reason = health.lastFailureReason ?? (health.status === "unavailable" ? "unavailable" : health.status);
   return `gateway public edge failed: ${reason}`;
+}
+
+function collectRelayCapacityReadinessDiagnostics(capacity: LaunchDemoCapacitySnapshot, errors: string[]): void {
+  const reason = relayCapacityReadinessReason(capacity);
+  if (reason) {
+    errors.push(reason);
+  }
+}
+
+function relayCapacityReadinessReason(capacity: LaunchDemoCapacitySnapshot): string | undefined {
+  const readiness = capacity.dataReadiness;
+  const status = stringRecordField(readiness, "status");
+  if (!status || status === "ready") {
+    return undefined;
+  }
+  const missingGatewayIds = stringArrayRecordField(readiness, "missingGatewayIds");
+  const expectedGatewayCount = numberRecordField(readiness, "expectedGatewayCount");
+  const selectableGatewayCount = numberRecordField(readiness, "selectableGatewayCount");
+  const staleReason = stringRecordField(readiness, "staleReason");
+  const parts = [
+    expectedGatewayCount !== undefined ? `expected ${expectedGatewayCount} gateways` : undefined,
+    selectableGatewayCount !== undefined ? `selectable ${selectableGatewayCount}` : undefined,
+    missingGatewayIds.length > 0 ? `missing ${missingGatewayIds.slice(0, 5).join(", ")}` : undefined,
+    staleReason
+  ].filter((item): item is string => Boolean(item));
+  const peerReadThrough = capacity.peerReadThrough ? " after peer read-through" : "";
+  return `relay capacity ${status}${peerReadThrough}${parts.length > 0 ? `: ${parts.join("; ")}` : ""}`;
+}
+
+function launchDemoCapacitySelectionFailureDetails(input: {
+  capacity: LaunchDemoCapacitySnapshot;
+  relayUrls: string[];
+  source: string;
+  scope?: string;
+  errors: string[];
+  availableProcessorCount: number;
+  requestedProcessorCount: number;
+  minReady?: number;
+  operatorId?: string;
+  gatewayId?: string;
+  requestedProcessorId?: string;
+}): LaunchDemoCapacitySelectionFailureDetails {
+  return {
+    code: "capacity_unavailable",
+    source: input.source,
+    scope: input.scope,
+    checked: input.errors.slice(0, 20),
+    availableProcessorCount: input.availableProcessorCount,
+    requestedProcessorCount: input.requestedProcessorCount,
+    minReady: input.minReady,
+    memberAware: input.capacity.memberAware,
+    memberCount: input.capacity.members.length,
+    excludedMemberCount: input.capacity.excludedMembers.length,
+    reportCount: input.capacity.reports.length,
+    relayUrls: input.relayUrls,
+    dataReadiness: input.capacity.dataReadiness,
+    peerReadThrough: input.capacity.peerReadThrough,
+    peerResults: input.capacity.peerResults,
+    relayResults: input.capacity.relayResults,
+    gatewayHealthExclusions: gatewayHealthCapacityExclusionDetails(input.capacity.excludedMembers, {
+      operatorId: input.operatorId,
+      gatewayId: input.gatewayId,
+      requestedProcessorId: input.requestedProcessorId
+    })
+  };
+}
+
+function gatewayHealthCapacityExclusionDetails(
+  members: LaunchDemoCapacityMember[],
+  input: {
+    operatorId?: string;
+    gatewayId?: string;
+    requestedProcessorId?: string;
+  }
+): Array<Record<string, unknown>> {
+  const requestedOperatorId = input.operatorId?.toLowerCase();
+  const seen = new Set<string>();
+  const details: Array<Record<string, unknown>> = [];
+  for (const member of members) {
+    if (requestedOperatorId && member.operatorId.toLowerCase() !== requestedOperatorId) {
+      continue;
+    }
+    if (input.gatewayId && member.gatewayId !== input.gatewayId) {
+      continue;
+    }
+    if (input.requestedProcessorId && member.processorId.toLowerCase() !== input.requestedProcessorId) {
+      continue;
+    }
+    const reason = gatewayHealthExclusionReason(member.gatewayHealth);
+    if (!reason) {
+      continue;
+    }
+    const key = `${member.operatorId.toLowerCase()}:${member.gatewayId}:${member.processorId.toLowerCase()}:${reason}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    details.push({
+      operatorId: member.operatorId,
+      gatewayId: member.gatewayId,
+      processorId: member.processorId,
+      processor: member.processor,
+      reportId: member.reportId,
+      reason,
+      gatewayHealth: member.gatewayHealth,
+      sourceRelayId: member.sourceRelayId,
+      sourceRelayUrl: member.sourceRelayUrl
+    });
+  }
+  return details;
+}
+
+function isLaunchDemoCapacitySelectionError(error: unknown): error is LaunchDemoCapacitySelectionError {
+  return error instanceof LaunchDemoCapacitySelectionError;
 }
 
 function launchDemoReportHasCapacity(report: GatewayCapabilityReport): boolean {
