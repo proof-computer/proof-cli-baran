@@ -4507,10 +4507,8 @@ function launchDemoWorkflowGroupMember(member: LaunchDemoMemberSelection): Switc
     gatewayId: member.gatewayId,
     managerId: member.managerId,
     reportId: member.reportId,
-    reportedAt: member.reportedAt,
     reportExpiresAt: member.reportExpiresAt,
     publicAddresses: member.publicAddresses,
-    sourceRelayId: member.sourceRelayId,
     sourceRelayUrl: member.sourceRelayUrl
   };
 }
