@@ -220,6 +220,17 @@ export interface OperatorCapacityMember {
   upstreamAdmissionModes: GatewayUpstreamAdmissionMode[];
   sourceRelayId?: string;
   sourceRelayUrl?: string;
+  gatewayHealth?: OperatorCapacityGatewayHealth;
+}
+
+export interface OperatorCapacityGatewayHealth {
+  status: "probation" | "healthy" | "unavailable";
+  eligible: boolean;
+  weight: number;
+  lastCheckedAt?: string;
+  lastFailureReason?: string;
+  nextCheckIntervalSeconds: number;
+  distinctValidatorCount?: number;
 }
 
 export interface SelectOperatorCapabilityCandidateInput {

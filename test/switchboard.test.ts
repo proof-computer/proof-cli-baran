@@ -1840,7 +1840,47 @@ test("reads operator-capacity members as the authoritative capacity surface", as
     assert.equal(snapshot.members.length, 1);
     assert.equal(snapshot.members[0]?.processorId, TEST_PROCESSOR_ID);
     assert.equal(snapshot.members[0]?.sourceRelayUrl, relayUrl);
+    assert.equal(snapshot.excludedMembers.length, 0);
     assert.equal(snapshot.reports.length, 1);
+  });
+});
+
+test("surfaces gateway-health capacity exclusions from operator-capacity", async () => {
+  const excluded = testCapacityMember({
+    gatewayHealth: {
+      status: "unavailable",
+      eligible: false,
+      weight: 0,
+      lastCheckedAt: "2026-06-08T12:00:00.000Z",
+      lastFailureReason: "tcp_refused",
+      nextCheckIntervalSeconds: 300,
+      distinctValidatorCount: 1
+    }
+  });
+
+  await withOperatorCapacityServer({
+    ok: true,
+    members: [],
+    excludedMembers: [excluded],
+    latest: [testCapacityReport({ processor: TEST_PROCESSOR, reportId: "legacy-report" })]
+  }, async (relayUrl) => {
+    const snapshot = await readLaunchDemoCapacity(relayUrl);
+
+    assert.equal(snapshot.memberAware, true);
+    assert.equal(snapshot.members.length, 0);
+    assert.equal(snapshot.excludedMembers.length, 1);
+    assert.equal(snapshot.excludedMembers[0]?.gatewayHealth?.lastFailureReason, "tcp_refused");
+
+    await assert.rejects(
+      () => selectPinnedDeployCapacity({
+        relayUrl,
+        network: "mainnet",
+        operatorId: TEST_OPERATOR_ID,
+        gatewayId: TEST_GATEWAY_ID,
+        processor: TEST_PROCESSOR
+      }),
+      /gateway-test-1: gateway public edge failed: tcp_refused/u
+    );
   });
 });
 

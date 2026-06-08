@@ -70,6 +70,9 @@ export default class SwitchboardLaunchDemo extends Command {
     "quote-preview-retries": Flags.string({
       description: "Ingress quote preview retry count."
     }),
+    "public-probe-timeout-ms": Flags.string({
+      description: "Final public URL readiness probe timeout in milliseconds."
+    }),
     manifest: Flags.string({
       description: "Network manifest path or URL."
     }),
@@ -164,6 +167,7 @@ FLAGS
   --max-cost-per-execution <n>    Maximum Acurast cost per execution.
   --quote-preview-timeout-ms <ms> Ingress quote preview timeout in milliseconds.
   --quote-preview-retries <n>     Ingress quote preview retry count.
+  --public-probe-timeout-ms <ms>  Final public URL readiness probe timeout in milliseconds.
   --manifest <path-or-url>        Network manifest path or URL.
   --context <name>                Switchboard context name for runtime defaults.
   --project-dir <path>            Switchboard project directory.

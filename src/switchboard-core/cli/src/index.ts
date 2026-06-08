@@ -2445,6 +2445,7 @@ interface LaunchDemoCapacitySelection {
   routeCapacity: number;
   readiness: ProcessorInfo;
   sourceRelayUrl?: string;
+  gatewayHealth?: LaunchDemoGatewayHealth;
 }
 
 interface LaunchDemoProcessorSelection {
@@ -2466,6 +2467,7 @@ interface LaunchDemoMemberSelection extends LaunchDemoProcessorSelection {
   routeCapacity: number;
   sourceRelayId?: string;
   sourceRelayUrl?: string;
+  gatewayHealth?: LaunchDemoGatewayHealth;
 }
 
 type LaunchDemoGatewayCapabilityReport = GatewayCapabilityReport & {
@@ -2484,15 +2486,18 @@ type LaunchDemoCapacityMember = OperatorCapacityMember & {
   sourceRelayUrl?: string;
 };
 
+type LaunchDemoGatewayHealth = NonNullable<OperatorCapacityMember["gatewayHealth"]>;
+
 interface LaunchDemoCapacitySnapshot {
   relayUrl?: string;
   memberAware: boolean;
   members: LaunchDemoCapacityMember[];
+  excludedMembers: LaunchDemoCapacityMember[];
   reports: LaunchDemoCapacityReport[];
 }
 
 type LaunchDemoCapacityRelayResult =
-  | { ok: true; relayUrl: string; memberAware: boolean; members: LaunchDemoCapacityMember[]; reports: LaunchDemoCapacityReport[] }
+  | { ok: true; relayUrl: string; memberAware: boolean; members: LaunchDemoCapacityMember[]; excludedMembers: LaunchDemoCapacityMember[]; reports: LaunchDemoCapacityReport[] }
   | { ok: false; relayUrl: string; error: string };
 
 type LaunchDemoQuotePreview =
@@ -2803,7 +2808,7 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
         workDir: demoProject.dir,
         emittedEventCount
       });
-  const output = deployOutput(report, reportPath, {
+  let output = deployOutput(report, reportPath, {
     action: "launch-demo",
     relayUrl: operationRelayUrl,
     routeActivationMode: "relay-reconciled",
@@ -2816,6 +2821,9 @@ async function launchDemoCommand(flags: Map<string, string | boolean>, runtime: 
     estimate,
     demoProject
   });
+  if (output.ok === true) {
+    output = await verifyLaunchDemoPublicReadiness(output, report, reportPath, flags);
+  }
   await saveProjectDeployment(runtime, output);
   if (output.ok !== true) {
     printOrWriteDeployReportFailure(flags, output, report, reportPath, "launch-demo");
@@ -3295,6 +3303,12 @@ async function selectLaunchDemoCapacity(input: {
   }
 
   if (capacity.memberAware) {
+    collectGatewayHealthCapacityExclusions(capacity.excludedMembers, {
+      operatorId: input.operatorId,
+      gatewayId: input.gatewayId,
+      requestedProcessorId,
+      errors
+    });
     const candidates = launchDemoCapacityMemberCandidates(capacity.members, {
       operatorId: input.operatorId,
       gatewayId: input.gatewayId,
@@ -3529,7 +3543,8 @@ function launchDemoMemberFromCapacityMember(
     activeRouteCount: member.activeRouteCount,
     routeCapacity: member.routeCapacity,
     sourceRelayId: member.sourceRelayId,
-    sourceRelayUrl: member.sourceRelayUrl
+    sourceRelayUrl: member.sourceRelayUrl,
+    gatewayHealth: member.gatewayHealth
   };
 }
 
@@ -3563,6 +3578,12 @@ async function selectDeployCapacity(input: {
   const candidates: LaunchDemoMemberSelection[] = [];
 
   if (capacity.memberAware) {
+    collectGatewayHealthCapacityExclusions(capacity.excludedMembers, {
+      operatorId: input.operatorId,
+      gatewayId: input.gatewayId,
+      requestedProcessorId,
+      errors
+    });
     const memberCandidates = launchDemoCapacityMemberCandidates(capacity.members, {
       operatorId: input.operatorId,
       gatewayId: input.gatewayId,
@@ -3806,7 +3827,8 @@ function launchDemoSelectionFromMembers(members: LaunchDemoMemberSelection[]): L
     activeRouteCount: first.activeRouteCount,
     routeCapacity: first.routeCapacity,
     readiness: first.readiness,
-    sourceRelayUrl: first.sourceRelayUrl
+    sourceRelayUrl: first.sourceRelayUrl,
+    gatewayHealth: first.gatewayHealth
   };
 }
 
@@ -3824,10 +3846,12 @@ export async function readLaunchDemoCapacity(relayUrls: string | string[]): Prom
   const memberAware = successful.some((result) => result.memberAware);
   const successfulReports = successful.flatMap((result) => result.reports);
   const successfulMembers = successful.flatMap((result) => result.members);
+  const successfulExcludedMembers = successful.flatMap((result) => result.excludedMembers);
   if (memberAware || successfulReports.length > 0) {
     return {
       memberAware,
       members: newestLaunchDemoMembersBySelectionKey(successfulMembers),
+      excludedMembers: newestLaunchDemoMembersBySelectionKey(successfulExcludedMembers),
       reports: newestLaunchDemoReportsByGateway(successfulReports)
     };
   }
@@ -3852,6 +3876,7 @@ async function readLaunchDemoCapacitySnapshotFromRelay(relayUrl: string): Promis
       relayUrl,
       memberAware: result.memberAware,
       members: result.members,
+      excludedMembers: result.excludedMembers,
       reports: result.reports
     };
   }
@@ -3877,6 +3902,7 @@ async function readLaunchDemoCapacityFromRelay(relayUrl: string): Promise<Launch
         relayUrl,
         memberAware: false,
         members: [],
+        excludedMembers: [],
         reports: (await readLegacyLaunchDemoCapabilityReports(relayUrl)).map((report) => ({ ...report, sourceRelayUrl: relayUrl }))
       };
     }
@@ -3891,12 +3917,16 @@ async function readLaunchDemoCapacityFromRelay(relayUrl: string): Promise<Launch
     }
     const memberAware = Array.isArray(parsed.members);
     const memberValues = memberAware ? parsed.members as unknown[] : [];
+    const excludedMemberValues = Array.isArray(parsed.excludedMembers) ? parsed.excludedMembers as unknown[] : [];
     const values = Array.isArray(parsed.latest) ? parsed.latest : Array.isArray(parsed.reports) ? parsed.reports : [];
     return {
       ok: true,
       relayUrl,
       memberAware,
       members: memberValues
+        .filter(isLaunchDemoCapacityMember)
+        .map((member) => ({ ...member, sourceRelayUrl: member.sourceRelayUrl ?? relayUrl })),
+      excludedMembers: excludedMemberValues
         .filter(isLaunchDemoCapacityMember)
         .map((member) => ({ ...member, sourceRelayUrl: member.sourceRelayUrl ?? relayUrl })),
       reports: values
@@ -4037,6 +4067,10 @@ export function launchDemoReportEligibilityReason(report: GatewayCapabilityRepor
 }
 
 function launchDemoMemberEligibilityReason(member: LaunchDemoCapacityMember): string | undefined {
+  const gatewayHealthReason = gatewayHealthExclusionReason(member.gatewayHealth);
+  if (gatewayHealthReason) {
+    return gatewayHealthReason;
+  }
   if (Date.parse(member.expiresAt) <= Date.now()) {
     return "capability report expired";
   }
@@ -4057,6 +4091,48 @@ function launchDemoMemberEligibilityReason(member: LaunchDemoCapacityMember): st
     return "node-webserver class unsupported";
   }
   return undefined;
+}
+
+function collectGatewayHealthCapacityExclusions(
+  members: LaunchDemoCapacityMember[],
+  input: {
+    operatorId?: string;
+    gatewayId?: string;
+    requestedProcessorId?: string;
+    errors: string[];
+  }
+): void {
+  const requestedOperatorId = input.operatorId?.toLowerCase();
+  const seen = new Set<string>();
+  for (const member of members) {
+    if (requestedOperatorId && member.operatorId.toLowerCase() !== requestedOperatorId) {
+      continue;
+    }
+    if (input.gatewayId && member.gatewayId !== input.gatewayId) {
+      continue;
+    }
+    if (input.requestedProcessorId && member.processorId.toLowerCase() !== input.requestedProcessorId) {
+      continue;
+    }
+    const reason = gatewayHealthExclusionReason(member.gatewayHealth);
+    if (!reason) {
+      continue;
+    }
+    const key = `${member.operatorId.toLowerCase()}:${member.gatewayId}:${reason}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    input.errors.push(`${member.gatewayId}: ${reason}`);
+  }
+}
+
+function gatewayHealthExclusionReason(health: LaunchDemoGatewayHealth | undefined): string | undefined {
+  if (!health || health.eligible !== false) {
+    return undefined;
+  }
+  const reason = health.lastFailureReason ?? (health.status === "unavailable" ? "unavailable" : health.status);
+  return `gateway public edge failed: ${reason}`;
 }
 
 function launchDemoReportHasCapacity(report: GatewayCapabilityReport): boolean {
@@ -4404,7 +4480,8 @@ function launchDemoSelectionOutput(selection: LaunchDemoCapacitySelection): Reco
     activeRouteCount: selection.activeRouteCount,
     routeCapacity: selection.routeCapacity,
     processorHeartbeatAgeSeconds: selection.readiness.heartbeatAgeSeconds,
-    processorAvailability: selection.readiness.availability
+    processorAvailability: selection.readiness.availability,
+    gatewayHealth: selection.gatewayHealth
   };
 }
 
@@ -4425,7 +4502,8 @@ function launchDemoMemberEnv(member: LaunchDemoMemberSelection): Record<string, 
     sourceRelayId: member.sourceRelayId,
     sourceRelayUrl: member.sourceRelayUrl,
     heartbeatAgeSeconds: member.readiness.heartbeatAgeSeconds,
-    availability: member.readiness.availability
+    availability: member.readiness.availability,
+    gatewayHealth: member.gatewayHealth
   };
 }
 
@@ -8842,7 +8920,7 @@ async function deploymentStatusCommand(flags: Map<string, string | boolean>) {
   const hubRegistered = session.registered === true;
   const hubFunded = session.developer.toLowerCase() !== ethers.ZeroAddress.toLowerCase();
   const hubExpiresAt = positiveUnixSecondsField(session, "expiresAt");
-  const publicOk = Boolean(publicChecks?.health.ok && publicChecks.challenge.ok && publicChecks.demoStatus.ok && publicChecks.page.ok);
+  const publicOk = deploymentPublicChecksOk(publicChecks);
   const lifecycle = deploymentLifecycleStatus({
     report,
     session,
@@ -9942,6 +10020,105 @@ function printDeployResult(output: any) {
   }
 }
 
+async function verifyLaunchDemoPublicReadiness(
+  output: any,
+  report: Record<string, any>,
+  reportPath: string,
+  flags: Map<string, string | boolean>
+): Promise<any> {
+  const hostname = stringRecordField(output, "hostname");
+  const sessionId = stringRecordField(output, "sessionId");
+  if (!hostname || !sessionId) {
+    return failLaunchDemoPublicReadiness(output, report, reportPath, {
+      checked: false,
+      ok: false,
+      error: !hostname ? "missing hostname" : "missing session id"
+    });
+  }
+
+  const timeoutMs = numberFlag(
+    flags,
+    "public-probe-timeout-ms",
+    "SWITCHBOARD_LAUNCH_DEMO_PUBLIC_PROBE_TIMEOUT_MS",
+    10_000
+  );
+  const publicChecks = await runDeploymentPublicChecks(hostname, sessionId, timeoutMs);
+  const publicReadiness = {
+    checked: true,
+    ok: deploymentPublicChecksOk(publicChecks),
+    checkedAt: new Date().toISOString(),
+    publicChecks
+  };
+  if (!publicReadiness.ok) {
+    return failLaunchDemoPublicReadiness(output, report, reportPath, publicReadiness);
+  }
+
+  report.public = publicChecks;
+  report.publicReadiness = publicReadiness;
+  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  return {
+    ...output,
+    public: publicChecks,
+    publicReadiness
+  };
+}
+
+function deploymentPublicChecksOk(publicChecks: Record<string, any> | undefined): boolean {
+  return Boolean(
+    publicChecks?.health?.ok &&
+    publicChecks.challenge?.ok &&
+    publicChecks.demoStatus?.ok &&
+    publicChecks.page?.ok
+  );
+}
+
+async function failLaunchDemoPublicReadiness(
+  output: any,
+  report: Record<string, any>,
+  reportPath: string,
+  publicReadiness: Record<string, any>
+): Promise<any> {
+  const failure = {
+    stage: "public_endpoint",
+    message: launchDemoPublicReadinessFailure(publicReadiness)
+  };
+  report.ok = false;
+  report.failure = failure;
+  report.publicReadiness = publicReadiness;
+  if (publicReadiness.publicChecks) {
+    report.public = publicReadiness.publicChecks;
+  }
+  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  return {
+    ...output,
+    ok: false,
+    failure,
+    public: publicReadiness.publicChecks,
+    publicReadiness
+  };
+}
+
+function launchDemoPublicReadinessFailure(publicReadiness: Record<string, any>): string {
+  const publicChecks = recordValue(publicReadiness.publicChecks);
+  const validation = recordValue(publicChecks.validationReport);
+  const failureReason = stringRecordField(validation, "failureReason");
+  const tls = recordValue(validation.tls);
+  const health = recordValue(publicChecks.health);
+  const challenge = recordValue(publicChecks.challenge);
+  const demoStatus = recordValue(publicChecks.demoStatus);
+  const page = recordValue(publicChecks.page);
+  const details = [
+    failureReason,
+    stringRecordField(tls, "error") ? `tls=${stringRecordField(tls, "error")}` : undefined,
+    stringRecordField(health, "error") ? `health=${stringRecordField(health, "error")}` : undefined,
+    stringRecordField(challenge, "error") ? `challenge=${stringRecordField(challenge, "error")}` : undefined,
+    stringRecordField(demoStatus, "error") ? `status=${stringRecordField(demoStatus, "error")}` : undefined,
+    stringRecordField(page, "error") ? `page=${stringRecordField(page, "error")}` : undefined,
+    stringRecordField(publicReadiness, "error")
+  ].filter((item): item is string => Boolean(item));
+  return `Public URL check failed${details.length > 0 ? `: ${details.join("; ")}` : ""}`;
+}
+
 function printOrWriteDeployReportFailure(
   flags: Map<string, string | boolean>,
   output: Record<string, any>,
@@ -10909,11 +11086,12 @@ function deploymentSchedule(report: Record<string, any> | undefined): Record<str
   };
 }
 
-async function runDeploymentPublicChecks(hostname: string, sessionId: string): Promise<Record<string, any>> {
+async function runDeploymentPublicChecks(hostname: string, sessionId: string, timeoutMs = 10_000): Promise<Record<string, any>> {
   const validationReport = await validateSwitchboardRoute({
     sessionId,
     hostname,
     validatorId: "switchboard-cli",
+    timeoutMs,
     ...validatorReportSigningConfig()
   });
 
