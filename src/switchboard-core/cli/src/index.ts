@@ -4884,6 +4884,7 @@ function launchDemoWorkflowInputFromCli(input: {
     deploymentMode: input.groupDeployEnabled ? "group" : "single",
     relayUrl: input.relayUrl,
     allowInsecureHttp: boolFlag(input.flags, "allow-local-relay"),
+    confirmPublicDnsResolution: !boolFlag(input.flags, "allow-local-relay"),
     target: {
       name: target.name,
       chainId: input.manifestConfig.chainId ?? target.expectedChainId?.toString() ?? "",
@@ -5077,6 +5078,7 @@ function deployWorkflowInputFromCli(input: {
   return {
     relayUrl: input.relayUrl,
     allowInsecureHttp: boolFlag(input.flags, "allow-local-relay"),
+    confirmPublicDnsResolution: !boolFlag(input.flags, "allow-local-relay"),
     target: {
       name: target.name,
       chainId: input.manifestConfig.chainId ?? target.expectedChainId?.toString() ?? "",
@@ -11911,6 +11913,19 @@ export function deployFailureSummary(lower: string): { stage: string; impact: st
     return {
       stage: "Confirming Hub registration",
       impact: "Funding completed, but the Hub registration was not observed before the deploy runner stopped."
+    };
+  }
+  if (
+    lower.includes("public_endpoint") ||
+    lower.includes("public url check") ||
+    lower.includes("public endpoint") ||
+    lower.includes("dns_failed") ||
+    lower.includes("enotfound") ||
+    lower.includes("getaddrinfo")
+  ) {
+    return {
+      stage: "Verifying the public endpoint",
+      impact: "The job reached a ready runtime, but the public hostname did not resolve or respond from the deployer (DNS/TLS/HTTP check failed)."
     };
   }
   if (lower.includes("acurast")) {

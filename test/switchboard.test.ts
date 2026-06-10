@@ -10,6 +10,7 @@ import test from "node:test";
 
 import {
   createDeployWorkflowReadbackRetryFetch,
+  deployFailureSummary,
   launchDemoRuntimePackageRequirement,
   readLaunchDemoCapacity,
   selectPinnedDeployCapacity
@@ -3841,3 +3842,21 @@ function testCapacityReport(overrides: { processor?: string; reportId?: string }
     }
   };
 }
+
+test("deployFailureSummary maps a public-endpoint DNS failure to the public-endpoint stage, not Acurast", () => {
+  // Regression: the canonical ingress hostname literally contains "acurast",
+  // which previously matched the broad lower.includes("acurast") catch-all and
+  // mislabeled a public-endpoint DNS failure as "Submitting the Acurast job".
+  const message =
+    "Public URL check failed: dns_failed; tls=getaddrinfo ENOTFOUND e-c2o6tzoou2ucncnlfkq4.acurast.ingress.digital; health=fetch failed";
+  const summary = deployFailureSummary(`public_endpoint\n${message}`.toLowerCase());
+  assert.equal(summary.stage, "Verifying the public endpoint");
+  assert.notEqual(summary.stage, "Submitting the Acurast job");
+});
+
+test("deployFailureSummary still maps a genuine Acurast submit failure to the Acurast stage", () => {
+  const summary = deployFailureSummary(
+    "acurast submit failed: match is invalid due to overlapping schedules".toLowerCase()
+  );
+  assert.equal(summary.stage, "Submitting the Acurast job");
+});
