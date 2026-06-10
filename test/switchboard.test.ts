@@ -12,6 +12,7 @@ import {
   createDeployWorkflowReadbackRetryFetch,
   deployFailureSummary,
   launchDemoRuntimePackageRequirement,
+  pollDeploymentPublicReadiness,
   readLaunchDemoCapacity,
   selectPinnedDeployCapacity
 } from "../src/switchboard-core/cli/src/index.js";
@@ -3859,4 +3860,77 @@ test("deployFailureSummary still maps a genuine Acurast submit failure to the Ac
     "acurast submit failed: match is invalid due to overlapping schedules".toLowerCase()
   );
   assert.equal(summary.stage, "Submitting the Acurast job");
+});
+
+const READY_PUBLIC_CHECKS = {
+  health: { ok: true },
+  challenge: { ok: true },
+  demoStatus: { ok: true },
+  page: { ok: true }
+};
+
+function tlsResetPublicChecks() {
+  return {
+    validationReport: { failureReason: "tls_failed", tls: { ok: false, error: "read ECONNRESET" } },
+    health: { ok: false },
+    challenge: { ok: false },
+    demoStatus: { ok: false },
+    page: { ok: false }
+  };
+}
+
+// Drives the deadline-bounded poll with a fake clock so retries take no wall time:
+// every injected sleep advances `clock` by the requested ms.
+function fakeReadinessClock() {
+  let clock = 0;
+  return {
+    nowMs: () => clock,
+    sleep: async (ms: number) => {
+      clock += ms;
+    }
+  };
+}
+
+test("pollDeploymentPublicReadiness retries past a transient TLS reset and then succeeds", async () => {
+  const clock = fakeReadinessClock();
+  const waits: Array<{ attempt: number; reason?: string }> = [];
+  let attempt = 0;
+  const readiness = await pollDeploymentPublicReadiness(
+    {
+      runChecks: async () => {
+        attempt += 1;
+        return attempt < 3 ? tlsResetPublicChecks() : READY_PUBLIC_CHECKS;
+      },
+      nowMs: clock.nowMs,
+      sleep: clock.sleep,
+      onWait: (info) => waits.push({ attempt: info.attempt, reason: info.reason })
+    },
+    { waitSeconds: 120, pollSeconds: 5 }
+  );
+  assert.equal(readiness.ok, true);
+  assert.equal(readiness.attempts, 3);
+  // Two transient failures => two wait lines, surfacing the TLS reason.
+  assert.equal(waits.length, 2);
+  assert.equal(waits[0]?.reason, "tls_failed");
+});
+
+test("pollDeploymentPublicReadiness fails after the wait deadline is exhausted", async () => {
+  const clock = fakeReadinessClock();
+  let attempt = 0;
+  const readiness = await pollDeploymentPublicReadiness(
+    {
+      runChecks: async () => {
+        attempt += 1;
+        return tlsResetPublicChecks();
+      },
+      nowMs: clock.nowMs,
+      sleep: clock.sleep
+    },
+    { waitSeconds: 12, pollSeconds: 5 }
+  );
+  assert.equal(readiness.ok, false);
+  // 12s window / 5s poll => probes at t=0,5,10 (sleep clamps to 2s) and t=12;
+  // the t=12 probe runs, then remainingMs===0 returns without another sleep.
+  assert.equal(attempt, 4);
+  assert.equal(readiness.attempts, 4);
 });

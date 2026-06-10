@@ -10400,25 +10400,115 @@ async function verifyLaunchDemoPublicReadiness(
     "SWITCHBOARD_LAUNCH_DEMO_PUBLIC_PROBE_TIMEOUT_MS",
     10_000
   );
-  const publicChecks = await runDeploymentPublicChecks(hostname, sessionId, timeoutMs);
-  const publicReadiness = {
-    checked: true,
-    ok: deploymentPublicChecksOk(publicChecks),
-    checkedAt: new Date().toISOString(),
-    publicChecks
-  };
+  // A freshly activated route can briefly reset TLS (read ECONNRESET) before the
+  // gateway edge finishes binding the issued certificate, so the first strict
+  // probe can fail on a route that is otherwise healthy. Poll until ready with a
+  // bounded deadline, mirroring the runtime-HTTPS/route-readiness waits earlier
+  // in the workflow, instead of treating a single probe as fatal.
+  const waitSeconds = numberFlag(
+    flags,
+    "public-readiness-wait-seconds",
+    "SWITCHBOARD_LAUNCH_DEMO_PUBLIC_READINESS_WAIT_SECONDS",
+    120
+  );
+  const pollSeconds = numberFlag(
+    flags,
+    "public-readiness-poll-seconds",
+    "SWITCHBOARD_LAUNCH_DEMO_PUBLIC_READINESS_POLL_SECONDS",
+    5
+  );
+  const json = boolFlag(flags, "json");
+
+  const publicReadiness = await pollDeploymentPublicReadiness(
+    {
+      runChecks: () => runDeploymentPublicChecks(hostname, sessionId, timeoutMs),
+      nowMs: () => Date.now(),
+      sleep,
+      onWait: json
+        ? undefined
+        : ({ attempt, reason, sleepMs, remainingMs }) => {
+            printProgressLine(
+              "wait",
+              "Public endpoint",
+              `not ready${reason ? ` (${reason})` : ""}; retry ${attempt + 1} in ${Math.round(sleepMs / 1000)}s, ${formatRemainingSeconds(remainingMs)} left`
+            );
+          }
+    },
+    { waitSeconds, pollSeconds }
+  );
+
   if (!publicReadiness.ok) {
     return failLaunchDemoPublicReadiness(output, report, reportPath, publicReadiness);
   }
+  if (!json && (publicReadiness.attempts ?? 1) > 1) {
+    printProgressLine("ok", "Public endpoint", "ready");
+  }
 
-  report.public = publicChecks;
+  report.public = publicReadiness.publicChecks;
   report.publicReadiness = publicReadiness;
   await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   return {
     ...output,
-    public: publicChecks,
+    public: publicReadiness.publicChecks,
     publicReadiness
   };
+}
+
+export interface DeploymentPublicReadinessDeps {
+  runChecks: () => Promise<Record<string, any>>;
+  nowMs: () => number;
+  sleep: (ms: number) => Promise<void>;
+  onWait?: (info: { attempt: number; reason?: string; sleepMs: number; remainingMs: number }) => void;
+}
+
+// Deadline-bounded readiness poll for the final public URL check. A just-activated
+// route can briefly reset TLS while the gateway edge binds the issued certificate,
+// so we retry until ready rather than failing on the first probe. Pure/injectable
+// so the retry + deadline logic is unit-testable without network or timers.
+export async function pollDeploymentPublicReadiness(
+  deps: DeploymentPublicReadinessDeps,
+  options: { waitSeconds: number; pollSeconds: number }
+): Promise<Record<string, any>> {
+  const deadline = deps.nowMs() + Math.max(0, options.waitSeconds) * 1000;
+  const pollMs = Math.max(1, options.pollSeconds) * 1000;
+  let publicReadiness: Record<string, any> = { checked: true, ok: false };
+  let attempt = 0;
+  for (;;) {
+    attempt += 1;
+    const publicChecks = await deps.runChecks();
+    publicReadiness = {
+      checked: true,
+      ok: deploymentPublicChecksOk(publicChecks),
+      checkedAt: new Date().toISOString(),
+      publicChecks,
+      attempts: attempt
+    };
+    if (publicReadiness.ok) {
+      return publicReadiness;
+    }
+    const remainingMs = deadline - deps.nowMs();
+    if (remainingMs <= 0) {
+      return publicReadiness;
+    }
+    const sleepMs = Math.min(pollMs, remainingMs);
+    deps.onWait?.({ attempt, reason: publicReadinessRetryReason(publicReadiness), sleepMs, remainingMs });
+    await deps.sleep(sleepMs);
+  }
+}
+
+function publicReadinessRetryReason(publicReadiness: Record<string, any>): string | undefined {
+  const publicChecks = recordValue(publicReadiness.publicChecks);
+  const validation = recordValue(publicChecks.validationReport);
+  const failureReason = stringRecordField(validation, "failureReason");
+  const tlsError = stringRecordField(recordValue(validation.tls), "error");
+  return failureReason ?? tlsError;
+}
+
+function formatRemainingSeconds(ms: number): string {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 }
 
 function deploymentPublicChecksOk(publicChecks: Record<string, any> | undefined): boolean {

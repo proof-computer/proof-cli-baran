@@ -73,6 +73,12 @@ export default class SwitchboardLaunchDemo extends Command {
     "public-probe-timeout-ms": Flags.string({
       description: "Final public URL readiness probe timeout in milliseconds."
     }),
+    "public-readiness-wait-seconds": Flags.string({
+      description: "Total time to wait for the public URL to become ready before failing."
+    }),
+    "public-readiness-poll-seconds": Flags.string({
+      description: "Interval between public URL readiness probes while waiting."
+    }),
     manifest: Flags.string({
       description: "Network manifest path or URL."
     }),
@@ -168,6 +174,8 @@ FLAGS
   --quote-preview-timeout-ms <ms> Ingress quote preview timeout in milliseconds.
   --quote-preview-retries <n>     Ingress quote preview retry count.
   --public-probe-timeout-ms <ms>  Final public URL readiness probe timeout in milliseconds.
+  --public-readiness-wait-seconds <s>  Total time to wait for the public URL to become ready.
+  --public-readiness-poll-seconds <s>  Interval between public URL readiness probes.
   --manifest <path-or-url>        Network manifest path or URL.
   --context <name>                Switchboard context name for runtime defaults.
   --project-dir <path>            Switchboard project directory.
