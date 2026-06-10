@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { build } from "esbuild";
-import { deployProject } from "@acurast/sdk/deploy";
 import { convertConfigToJob } from "@acurast/sdk/chain";
 import { walletFromMnemonic } from "@acurast/sdk/chain";
 import {
@@ -20,6 +19,8 @@ import {
   generateSwitchboardCodeKey,
   SWITCHBOARD_CODE_KEY_ENV
 } from "./relay/encrypted-code.js";
+import { deployProjectHardened } from "./acurast-chain-submit.js";
+import { acquireWalletLock } from "./acurast-wallet-lock.js";
 
 const DEFAULT_MAINNET_RPC = "wss://archive.mainnet.acurast.com";
 const DEFAULT_CANARY_RPC = "wss://canarynet-ws-1.acurast-h-server-2.papers.tech";
@@ -474,9 +475,17 @@ async function submitPreparedSdkJob(
   const mnemonic = acurastMnemonic(input.env);
   const ipfs = acurastSdkIpfsUploadConfig(input.env);
   const wallet = await walletFromMnemonic(mnemonic, { name: "switchboard-cli" });
+  const submitTimeoutMs = nonNegativeInteger(
+    input.env.SWITCHBOARD_ACURAST_SUBMIT_TIMEOUT_MS ?? "480000",
+    "SWITCHBOARD_ACURAST_SUBMIT_TIMEOUT_MS"
+  );
+  const walletLockWaitMs = nonNegativeInteger(
+    input.env.SWITCHBOARD_ACURAST_WALLET_LOCK_WAIT_MS ?? "90000",
+    "SWITCHBOARD_ACURAST_WALLET_LOCK_WAIT_MS"
+  );
   let txHash: string | undefined;
   let deploymentId: string | undefined;
-  await deployProject(prepared.config, prepared.job, {
+  await deployProjectHardened(prepared.config, prepared.job, {
     wallet,
     rpcEndpoint: acurastRpc(input.env),
     ipfs,
@@ -494,7 +503,12 @@ async function submitPreparedSdkJob(
         }
       }
     },
-    bundleFolder: path.join(prepared.runDir, "acurast-bundles")
+    bundleFolder: path.join(prepared.runDir, "acurast-bundles"),
+    submitTimeoutMs,
+    // Serialize same-wallet deploys across local CLI processes: concurrent
+    // submissions race the account nonce and the loser is evicted from the
+    // pool without ever reaching a block.
+    acquireSubmitLock: () => acquireWalletLock(wallet.address, { maxWaitMs: walletLockWaitMs })
   });
   return {
     deploymentId,
