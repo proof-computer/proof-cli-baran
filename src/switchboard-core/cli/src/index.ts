@@ -53,7 +53,13 @@ import {
 import { runOperatorDiscover } from "../../scripts/operator/discover.js";
 import { runOperatorSetup, runOperatorStatus, runOperatorUpgrade } from "../../scripts/operator/setup.js";
 import { getSwitchboardTarget, isParachainTarget, type SwitchboardTargetConfig } from "../../src/chains.js";
-import { claimCommandParachain, refundCommandParachain } from "./proof-ingress-commands.js";
+import {
+  claimCommandParachain,
+  leaseCommandParachain,
+  refundCommandParachain,
+  renewCommandParachain,
+  retireCommandParachain
+} from "./proof-ingress-commands.js";
 import {
   customerHostnameAttachmentSubstratePayload,
   customerHostnameInstructions,
@@ -211,6 +217,9 @@ export type CommandName =
   | "context-dns-clear"
   | "preflight"
   | "claim"
+  | "lease"
+  | "renew"
+  | "retire"
   | "claimable"
   | "session-register"
   | "session-status"
@@ -6462,6 +6471,72 @@ export async function runSwitchboardClaim(
   await claimCommand(flags);
 }
 
+async function resolveParachainCommandTarget(
+  flags: Map<string, string | boolean>,
+  label: string
+): Promise<{ target: SwitchboardTargetConfig; manifestConfig: CliNetworkConfig }> {
+  const manifestConfig = await resolveCliNetworkConfig(flags);
+  const target = targetFromFlags(flags, manifestConfig);
+  if (!isParachainTarget(target)) {
+    throw new Error(
+      `${label} is a PROOF Ingress parachain command. Pass --target proof-ingress-local (or another parachain target).`
+    );
+  }
+  return { target, manifestConfig };
+}
+
+async function runParachainLifecycle(
+  name: CommandName,
+  argv: readonly string[],
+  command: (flags: Map<string, string | boolean>) => Promise<void>,
+  runtimeOverride?: CliRuntime
+): Promise<void> {
+  const normalized = argv[0] === name ? [...argv] : [name, ...argv];
+  const parsed = parseArgs(normalized);
+  if (parsed.command !== name) {
+    throw new Error(`runSwitchboard ${name} expected ${name} args, got ${normalized.join(" ")}`);
+  }
+  const runtime = runtimeOverride ?? (await loadCliRuntime(parsed.flags, parsed.command));
+  const flags = applyRuntimeDefaults(parsed.flags, runtime, parsed.command);
+  await command(flags);
+}
+
+async function leaseCommand(flags: Map<string, string | boolean>): Promise<void> {
+  const { target, manifestConfig } = await resolveParachainCommandTarget(flags, "lease");
+  await leaseCommandParachain(flags, {}, target, manifestConfig);
+}
+
+async function renewCommand(flags: Map<string, string | boolean>): Promise<void> {
+  const { target, manifestConfig } = await resolveParachainCommandTarget(flags, "renew");
+  await renewCommandParachain(flags, {}, target, manifestConfig);
+}
+
+async function retireCommand(flags: Map<string, string | boolean>): Promise<void> {
+  const { target, manifestConfig } = await resolveParachainCommandTarget(flags, "retire");
+  await retireCommandParachain(flags, {}, target, manifestConfig);
+}
+
+export async function runSwitchboardLease(
+  argv: readonly string[] = process.argv.slice(2),
+  runtimeOverride?: CliRuntime
+): Promise<void> {
+  await runParachainLifecycle("lease", argv, leaseCommand, runtimeOverride);
+}
+
+export async function runSwitchboardRenew(
+  argv: readonly string[] = process.argv.slice(2),
+  runtimeOverride?: CliRuntime
+): Promise<void> {
+  await runParachainLifecycle("renew", argv, renewCommand, runtimeOverride);
+}
+
+export async function runSwitchboardRetire(
+  argv: readonly string[] = process.argv.slice(2),
+  runtimeOverride?: CliRuntime
+): Promise<void> {
+  await runParachainLifecycle("retire", argv, retireCommand, runtimeOverride);
+}
+
 export async function runSwitchboardRefundable(
   argv: readonly string[] = process.argv.slice(2),
   runtimeOverride?: CliRuntime
@@ -12578,6 +12653,9 @@ function commandLoadsContextSecrets(command: CommandName | undefined): boolean {
     command === "catalog-inspect" ||
     command === "catalog-verify" ||
     command === "catalog-set-state" ||
+    command === "lease" ||
+    command === "renew" ||
+    command === "retire" ||
     command.startsWith("relay-")
   );
 }
@@ -13022,6 +13100,15 @@ function normalizeCommand(positionals: string[]): CommandName {
     }
     if (value === "refundable") {
       return "session-refundable";
+    }
+    if (value === "lease") {
+      return "lease";
+    }
+    if (value === "renew") {
+      return "renew";
+    }
+    if (value === "retire") {
+      return "retire";
     }
     if (value === "launch-demo") {
       return "launch-demo";
