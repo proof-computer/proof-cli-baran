@@ -134,11 +134,12 @@ function parseAmount(value: string, decimals: number): bigint {
 
 // --- connection / signer ----------------------------------------------------
 
-function parachainWsUrl(flags: Flags, target: SwitchboardTargetConfig, manifestConfig: ManifestLike): string {
+function parachainWsUrl(flags: Flags, target: SwitchboardTargetConfig): string {
+  // Parachain ws comes from explicit flags or the target only — never the Hub
+  // manifest's substrate url, which points at Asset Hub.
   return (
     strFlag(flags, "parachain-ws-url") ??
     strFlag(flags, "substrate-ws-url") ??
-    manifestConfig.substrateWsUrl ??
     target.defaultParachainWsUrl ??
     ""
   );
@@ -161,8 +162,8 @@ async function resolveParachainSigner(flags: Flags, target: SwitchboardTargetCon
   return account;
 }
 
-async function openParachain(flags: Flags, target: SwitchboardTargetConfig, manifestConfig: ManifestLike): Promise<ApiPromise> {
-  return connectParachain(parachainWsUrl(flags, target, manifestConfig));
+async function openParachain(flags: Flags, target: SwitchboardTargetConfig): Promise<ApiPromise> {
+  return connectParachain(parachainWsUrl(flags, target));
 }
 
 async function resolveRouteId(api: ApiPromise, flags: Flags, target: SwitchboardTargetConfig): Promise<Hex> {
@@ -190,8 +191,8 @@ export async function claimCommandParachain(
     return claimRouteCreditParachain(flags, options, target, manifestConfig);
   }
   const submit = shouldSubmit(flags, options);
-  const wsUrl = parachainWsUrl(flags, target, manifestConfig);
-  const api = await openParachain(flags, target, manifestConfig);
+  const wsUrl = parachainWsUrl(flags, target);
+  const api = await openParachain(flags, target);
   try {
     const hasSeed = Boolean(strFlag(flags, "polkadot-seed") ?? envVar("POLKADOT_SEED"));
     const account = options.readOnly && !hasSeed ? undefined : await resolveParachainSigner(flags, target);
@@ -247,7 +248,7 @@ async function claimRouteCreditParachain(
     proof: unknown[];
   };
   const leaf: RouteCreditLeaf = { ...parsed.leaf, creditAmount: BigInt(String(parsed.leaf.creditAmount)) };
-  const api = await openParachain(flags, target, manifestConfig);
+  const api = await openParachain(flags, target);
   try {
     const base: Record<string, unknown> = {
       ok: true,
@@ -279,7 +280,7 @@ export async function refundCommandParachain(
   manifestConfig: ManifestLike
 ): Promise<void> {
   const submit = shouldSubmit(flags, options);
-  const api = await openParachain(flags, target, manifestConfig);
+  const api = await openParachain(flags, target);
   try {
     const routeId = await resolveRouteId(api, flags, target);
     const record = await routeRecord(api, routeId);
@@ -356,7 +357,7 @@ export async function leaseCommandParachain(
   manifestConfig: ManifestLike
 ): Promise<void> {
   const submit = shouldSubmit(flags, options);
-  const api = await openParachain(flags, target, manifestConfig);
+  const api = await openParachain(flags, target);
   try {
     const account = await resolveParachainSigner(flags, target);
     const brokerId = requireNum(flags, "broker-id");
@@ -412,7 +413,7 @@ export async function renewCommandParachain(
   manifestConfig: ManifestLike
 ): Promise<void> {
   const submit = shouldSubmit(flags, options);
-  const api = await openParachain(flags, target, manifestConfig);
+  const api = await openParachain(flags, target);
   try {
     const routeId = await resolveRouteId(api, flags, target);
     const additionalEpochs = requireNum(flags, "additional-epochs");
@@ -458,7 +459,7 @@ export async function retireCommandParachain(
   manifestConfig: ManifestLike
 ): Promise<void> {
   const submit = shouldSubmit(flags, options);
-  const api = await openParachain(flags, target, manifestConfig);
+  const api = await openParachain(flags, target);
   try {
     const routeId = await resolveRouteId(api, flags, target);
     const record = await routeRecord(api, routeId);
@@ -493,7 +494,7 @@ export async function routeStatusCommandParachain(
   target: SwitchboardTargetConfig,
   manifestConfig: ManifestLike
 ): Promise<void> {
-  const api = await openParachain(flags, target, manifestConfig);
+  const api = await openParachain(flags, target);
   try {
     const routeId = await resolveRouteId(api, flags, target);
     const record = await routeRecord(api, routeId);

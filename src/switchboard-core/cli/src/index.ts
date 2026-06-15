@@ -52,7 +52,8 @@ import {
 } from "../../src/operator-capability.js";
 import { runOperatorDiscover } from "../../scripts/operator/discover.js";
 import { runOperatorSetup, runOperatorStatus, runOperatorUpgrade } from "../../scripts/operator/setup.js";
-import { getSwitchboardTarget, type SwitchboardTargetConfig } from "../../src/chains.js";
+import { getSwitchboardTarget, isParachainTarget, type SwitchboardTargetConfig } from "../../src/chains.js";
+import { claimCommandParachain, refundCommandParachain } from "./proof-ingress-commands.js";
 import {
   customerHostnameAttachmentSubstratePayload,
   customerHostnameInstructions,
@@ -643,6 +644,9 @@ async function statusCommand(flags: Map<string, string | boolean>) {
 async function claimCommand(flags: Map<string, string | boolean>, options: { readOnly?: boolean } = {}) {
   const manifestConfig = await resolveCliNetworkConfig(flags);
   const target = targetFromFlags(flags, manifestConfig);
+  if (isParachainTarget(target)) {
+    return claimCommandParachain(flags, options, target, manifestConfig);
+  }
   const ethRpcUrl = manifestConfig.ethRpcUrl ?? target.defaultEthRpcUrl;
   const registryAddress = ethers.getAddress(manifestConfig.registryAddress ?? requiredStringFlag(flags, "registry", "INGRESS_REGISTRY_ADDRESS"));
   const assetAddress = ethers.getAddress(manifestConfig.defaultAssetAddress ?? requiredStringFlag(flags, "asset", "PAYMENT_ASSET_ADDRESS"));
@@ -721,6 +725,9 @@ async function refundCommand(flags: Map<string, string | boolean>, options: { re
   const report = reportPath ? (JSON.parse(await readFile(reportPath, "utf8")) as Record<string, any>) : undefined;
   const manifestConfig = await resolveCliNetworkConfig(flags);
   const target = targetFromFlags(flags, manifestConfig);
+  if (isParachainTarget(target)) {
+    return refundCommandParachain(flags, options, target, manifestConfig);
+  }
   const ethRpcUrl = manifestConfig.ethRpcUrl ?? target.defaultEthRpcUrl;
   const registryAddress = ethers.getAddress(manifestConfig.registryAddress ?? requiredStringFlag(flags, "registry", "INGRESS_REGISTRY_ADDRESS"));
   const sessionId = stringFlag(flags, "session-id") ?? stringRecordField(report?.session, "sessionId");
