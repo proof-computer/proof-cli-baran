@@ -656,7 +656,7 @@ async function claimCommand(flags: Map<string, string | boolean>, options: { rea
   const manifestConfig = await resolveCliNetworkConfig(flags);
   const target = targetFromFlags(flags, manifestConfig);
   if (isParachainTarget(target)) {
-    return claimCommandParachain(flags, options, target, manifestConfig);
+    return claimCommandParachain(stripHubSignerRuntimeDefaults(flags), options, target, manifestConfig);
   }
   const ethRpcUrl = manifestConfig.ethRpcUrl ?? target.defaultEthRpcUrl;
   const registryAddress = ethers.getAddress(manifestConfig.registryAddress ?? requiredStringFlag(flags, "registry", "INGRESS_REGISTRY_ADDRESS"));
@@ -737,7 +737,7 @@ async function refundCommand(flags: Map<string, string | boolean>, options: { re
   const manifestConfig = await resolveCliNetworkConfig(flags);
   const target = targetFromFlags(flags, manifestConfig);
   if (isParachainTarget(target)) {
-    return refundCommandParachain(flags, options, target, manifestConfig);
+    return refundCommandParachain(stripHubSignerRuntimeDefaults(flags), options, target, manifestConfig);
   }
   const ethRpcUrl = manifestConfig.ethRpcUrl ?? target.defaultEthRpcUrl;
   const registryAddress = ethers.getAddress(manifestConfig.registryAddress ?? requiredStringFlag(flags, "registry", "INGRESS_REGISTRY_ADDRESS"));
@@ -6487,6 +6487,23 @@ async function resolveParachainCommandTarget(
   return { target, manifestConfig };
 }
 
+// The Hub context injects polkadot-address / ss58-format runtime defaults that
+// are wrong for a parachain (different ss58 + a Hub mainnet address). Drop them
+// when they were runtime-injected (not passed explicitly) so the parachain
+// signer uses the target's ss58 and skips the Hub address assertion.
+export function stripHubSignerRuntimeDefaults(
+  flags: Map<string, string | boolean>
+): Map<string, string | boolean> {
+  const output = new Map(flags);
+  for (const name of ["polkadot-address", "ss58-format"]) {
+    if (output.get(runtimeDefaultFlagName(name)) === true) {
+      output.delete(name);
+      output.delete(runtimeDefaultFlagName(name));
+    }
+  }
+  return output;
+}
+
 async function runParachainLifecycle(
   name: CommandName,
   argv: readonly string[],
@@ -6503,17 +6520,20 @@ async function runParachainLifecycle(
   await command(flags);
 }
 
-async function leaseCommand(flags: Map<string, string | boolean>): Promise<void> {
+async function leaseCommand(rawFlags: Map<string, string | boolean>): Promise<void> {
+  const flags = stripHubSignerRuntimeDefaults(rawFlags);
   const { target, manifestConfig } = await resolveParachainCommandTarget(flags, "lease");
   await leaseCommandParachain(flags, {}, target, manifestConfig);
 }
 
-async function renewCommand(flags: Map<string, string | boolean>): Promise<void> {
+async function renewCommand(rawFlags: Map<string, string | boolean>): Promise<void> {
+  const flags = stripHubSignerRuntimeDefaults(rawFlags);
   const { target, manifestConfig } = await resolveParachainCommandTarget(flags, "renew");
   await renewCommandParachain(flags, {}, target, manifestConfig);
 }
 
-async function retireCommand(flags: Map<string, string | boolean>): Promise<void> {
+async function retireCommand(rawFlags: Map<string, string | boolean>): Promise<void> {
+  const flags = stripHubSignerRuntimeDefaults(rawFlags);
   const { target, manifestConfig } = await resolveParachainCommandTarget(flags, "retire");
   await retireCommandParachain(flags, {}, target, manifestConfig);
 }
@@ -6539,7 +6559,8 @@ export async function runSwitchboardRetire(
   await runParachainLifecycle("retire", argv, retireCommand, runtimeOverride);
 }
 
-async function routeCommand(flags: Map<string, string | boolean>): Promise<void> {
+async function routeCommand(rawFlags: Map<string, string | boolean>): Promise<void> {
+  const flags = stripHubSignerRuntimeDefaults(rawFlags);
   const { target, manifestConfig } = await resolveParachainCommandTarget(flags, "route");
   await routeStatusCommandParachain(flags, {}, target, manifestConfig);
 }

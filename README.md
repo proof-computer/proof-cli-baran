@@ -3,6 +3,33 @@
 `@proof-computer/proof-cli-switchboard` adds Switchboard commands to the public
 `proof` CLI.
 
+## PROOF Ingress parachain
+
+Selecting a parachain `--target` (for example `proof-ingress-local`, ws
+`ws://127.0.0.1:9944`) routes the accounting and route-lifecycle commands to the
+`proof-ingress` Substrate pallet via `@polkadot/api` instead of the Hub EVM
+relay. Signing uses an sr25519 seed (`--polkadot-seed` / `POLKADOT_SEED`); ss58
+comes from the target. Every mutating command is a dry-run preview until `--yes`.
+
+- `claim` — withdraw your claimable balance (`--mode route-credit --proof-file`
+  for a Merkle route-credit claim); `claimable` reads it.
+- `refund` / `refundable` — refund an unactivated or retired route by
+  `--route-id` (or derive it from `--hostname`/`--route-class-id`/`--salt`).
+- `lease` — `create_route_lease` (shows the precomputed route id and required
+  payment); `renew`, `retire` — extend / retire a route.
+- `route` — read a route's on-chain record (status, paid-until, escrow, active
+  generation, refund state).
+
+```
+proof switchboard lease  --target proof-ingress-local --broker-id 0 --route-class-id 42 \
+                         --hostname app.example.com --lease-epochs 10 --polkadot-seed //Alice --yes
+proof switchboard route  --target proof-ingress-local --route-id 0x... --json
+proof switchboard claim  --target proof-ingress-local --polkadot-seed //Alice --yes
+```
+
+The Hub EVM commands are unchanged. `test/proof-ingress-live.test.ts` is a gated
+end-to-end shakeout (`PROOF_INGRESS_LIVE=1`) against a fast-epochs node.
+
 The plugin exposes `proof switchboard ...` through native oclif commands backed
 by runner implementations owned by this package. Project
 initialization `init` and `project init`, fresh `deploy`,
