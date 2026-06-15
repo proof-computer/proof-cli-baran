@@ -58,7 +58,8 @@ import {
   leaseCommandParachain,
   refundCommandParachain,
   renewCommandParachain,
-  retireCommandParachain
+  retireCommandParachain,
+  routeStatusCommandParachain
 } from "./proof-ingress-commands.js";
 import {
   customerHostnameAttachmentSubstratePayload,
@@ -220,6 +221,7 @@ export type CommandName =
   | "lease"
   | "renew"
   | "retire"
+  | "route"
   | "claimable"
   | "session-register"
   | "session-status"
@@ -6537,6 +6539,18 @@ export async function runSwitchboardRetire(
   await runParachainLifecycle("retire", argv, retireCommand, runtimeOverride);
 }
 
+async function routeCommand(flags: Map<string, string | boolean>): Promise<void> {
+  const { target, manifestConfig } = await resolveParachainCommandTarget(flags, "route");
+  await routeStatusCommandParachain(flags, {}, target, manifestConfig);
+}
+
+export async function runSwitchboardRoute(
+  argv: readonly string[] = process.argv.slice(2),
+  runtimeOverride?: CliRuntime
+): Promise<void> {
+  await runParachainLifecycle("route", argv, routeCommand, runtimeOverride);
+}
+
 export async function runSwitchboardRefundable(
   argv: readonly string[] = process.argv.slice(2),
   runtimeOverride?: CliRuntime
@@ -12656,6 +12670,7 @@ function commandLoadsContextSecrets(command: CommandName | undefined): boolean {
     command === "lease" ||
     command === "renew" ||
     command === "retire" ||
+    command === "route" ||
     command.startsWith("relay-")
   );
 }
@@ -13109,6 +13124,9 @@ function normalizeCommand(positionals: string[]): CommandName {
     }
     if (value === "retire") {
       return "retire";
+    }
+    if (value === "route") {
+      return "route";
     }
     if (value === "launch-demo") {
       return "launch-demo";

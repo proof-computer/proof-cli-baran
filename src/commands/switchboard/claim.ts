@@ -87,6 +87,21 @@ function claimFlags() {
     yes: Flags.boolean({
       description: "Submit the claim transaction. Without --yes, this is a dry-run preview."
     }),
+    mode: Flags.string({
+      description: "Parachain claim mode: withdraw (default) or route-credit."
+    }),
+    "proof-file": Flags.string({
+      description: "Parachain route-credit mode: JSON file with { leaf, proof } for claim_route_credit."
+    }),
+    amount: Flags.string({
+      description: "Parachain withdraw amount (default = full claimable balance)."
+    }),
+    account: Flags.string({
+      description: "Parachain read-only: account whose claimable balance to inspect."
+    }),
+    "parachain-ws-url": Flags.string({
+      description: "PROOF Ingress parachain WebSocket url (parachain targets)."
+    }),
     recipient: Flags.string({
       description: "Reward recipient address to inspect. With --yes, the signer must match this address."
     }),
