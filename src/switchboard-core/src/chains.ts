@@ -11,9 +11,16 @@ export interface PaymentAssetConfig {
 export interface SwitchboardTargetConfig {
   name: string;
   label: string;
-  defaultEthRpcUrl: string;
+  /** Backend the target talks to. Defaults to "hub" (EVM/revive) when omitted. */
+  kind?: "hub" | "parachain";
+  /** Hub EVM JSON-RPC. Required for hub targets; absent for parachain targets. */
+  defaultEthRpcUrl?: string;
   defaultSubstrateWsUrl?: string;
   expectedChainId?: bigint;
+  /** PROOF Ingress parachain WebSocket endpoint (parachain targets only). */
+  defaultParachainWsUrl?: string;
+  /** SS58 address format for parachain signing/display (parachain targets only). */
+  ss58Format?: number;
   nativeSymbol: string;
   nativeDecimals: number;
   requiresExplicitPaymentAmount: boolean;
@@ -75,6 +82,41 @@ export const SWITCHBOARD_TARGETS: Record<string, SwitchboardTargetConfig> = {
     nativeDecimals: 10,
     requiresExplicitPaymentAmount: true,
     assets: [HUB_USDC, HUB_USDT]
+  },
+  "proof-ingress-local": {
+    name: "proof-ingress-local",
+    label: "PROOF Ingress local dev parachain",
+    kind: "parachain",
+    defaultParachainWsUrl: "ws://127.0.0.1:9944",
+    ss58Format: 42,
+    nativeSymbol: "UNIT",
+    nativeDecimals: 12,
+    requiresExplicitPaymentAmount: false,
+    assets: []
+  },
+  // TODO: fill defaultParachainWsUrl + ss58Format once the public PROOF Ingress
+  // parachain endpoints are live.
+  "proof-ingress-testnet": {
+    name: "proof-ingress-testnet",
+    label: "PROOF Ingress TestNet parachain",
+    kind: "parachain",
+    defaultParachainWsUrl: "",
+    ss58Format: 42,
+    nativeSymbol: "UNIT",
+    nativeDecimals: 12,
+    requiresExplicitPaymentAmount: false,
+    assets: []
+  },
+  "proof-ingress": {
+    name: "proof-ingress",
+    label: "PROOF Ingress parachain",
+    kind: "parachain",
+    defaultParachainWsUrl: "",
+    ss58Format: 42,
+    nativeSymbol: "UNIT",
+    nativeDecimals: 12,
+    requiresExplicitPaymentAmount: false,
+    assets: []
   }
 };
 
@@ -85,4 +127,9 @@ export function getSwitchboardTarget(name: string): SwitchboardTargetConfig {
   }
 
   return target;
+}
+
+/** True when the target is the PROOF Ingress parachain backend (vs Hub EVM). */
+export function isParachainTarget(target: SwitchboardTargetConfig): boolean {
+  return target.kind === "parachain";
 }
