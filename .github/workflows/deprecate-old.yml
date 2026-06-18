@@ -1,0 +1,19 @@
+name: Deprecate old package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deprecate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Deprecate @proof-computer/proof-cli-switchboard
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then echo "Missing NPM_ACCESS_TOKEN" >&2; exit 1; fi
+          npm deprecate "@proof-computer/proof-cli-switchboard" "Renamed to @proof-computer/proof-cli-baran — install @proof-computer/proof-cli-baran and use 'proof baran'."
