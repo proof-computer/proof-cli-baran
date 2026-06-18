@@ -79,7 +79,7 @@ import { runSwitchboardValidatorLaunchNative } from "../src/commands/baran/valid
 import { runSwitchboardValidatorScriptNative } from "../src/commands/baran/validator/script.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const commandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard.ts")).href;
+const commandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran.ts")).href;
 const catalogBuildCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "catalog", "build.ts")).href;
 const catalogInspectCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "catalog", "inspect.ts")).href;
 const catalogSetStateCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "catalog", "set-state.ts")).href;
@@ -1669,7 +1669,7 @@ test("emits native deploy progress from proof runner events", async () => {
 
   assert.equal(captured.result, 0);
   assert.match(captured.stdout, /Deployment progress/);
-  assert.match(captured.stdout, /Baran Runner/);
+  assert.match(captured.stdout, /Switchboard Runner/);
   assert.match(captured.stdout, /Run context/);
   assert.doesNotMatch(captured.stdout, /Capacity selection/);
   assert.match(captured.stdout, /Selected processor/);
@@ -1730,7 +1730,7 @@ test("restores colored native deploy progress headers and markers", async () => 
 
   assert.equal(captured.result, 0);
   assert.match(captured.stdout, /\u001b\[38;2;255;106;44m/);
-  assert.match(captured.stdout, /Baran Runner/);
+  assert.match(captured.stdout, /Switchboard Runner/);
   assert.match(captured.stdout, /\u001b\[32m\[ok\]\u001b\[0m/);
 });
 
@@ -2201,7 +2201,7 @@ test("emits native launch-demo progress from proof runner events", async () => {
   assert.match(captured.stdout, /Deployment progress/);
   assert.match(captured.stdout, /\n\nDemo project\n  \[\.\.\] Dependencies: installing demo package/);
   assert.match(captured.stdout, /\[warn\] npm: deprecated package/);
-  assert.match(captured.stdout, /\n\nSwitchboard demo\n  \[info\] Demo package:/);
+  assert.match(captured.stdout, /\n\nBaran demo\n  \[info\] Demo package:/);
   assert.doesNotMatch(captured.stdout, /Capacity selection/);
   assert.match(captured.stdout, /\[ok\] Selected processor: 5GrwvaEF\.\.\.qbkNbA/);
   assert.match(captured.stdout, /\[ok\] Deployment intent: di_demo/);
