@@ -1,0 +1,114 @@
+import { runSwitchboardContextCurrent as defaultRunSwitchboardContextCurrentRunner } from "../../../switchboard-core/cli/src/index.js";
+import { Command, Flags } from "@oclif/core";
+
+type RunSwitchboardContextCurrent = (argv?: readonly string[]) => Promise<void>;
+
+export interface SwitchboardContextCurrentOptions {
+  runner?: RunSwitchboardContextCurrent;
+}
+
+export default class SwitchboardContextCurrent extends Command {
+  static description = [
+    "Show the selected Baran context.",
+    "This is a local read-only inspection command backed by the existing baran context current implementation."
+  ].join("\n");
+  static examples = [
+    "<%= config.bin %> baran context current",
+    "<%= config.bin %> baran context current --json",
+    "<%= config.bin %> baran context current --context mainnet"
+  ];
+  static flags = {
+    help: Flags.help({
+      char: "h"
+    }),
+    json: Flags.boolean({
+      description: "Print sanitized machine-readable output."
+    }),
+    context: Flags.string({
+      description: "Baran context name for runtime defaults."
+    }),
+    "project-dir": Flags.string({
+      description: "Baran project directory."
+    }),
+    "no-project": Flags.boolean({
+      description: "Ignore switchboard.json and .switchboard state."
+    })
+  };
+  static strict = false;
+  static summary = "Show the current Baran context.";
+
+  async run(): Promise<void> {
+    this.parsed = true;
+    if (this.argv.includes("--help") || this.argv.includes("-h")) {
+      printSwitchboardContextCurrentHelp(this.config.bin);
+      return;
+    }
+    const exitCode = await runSwitchboardContextCurrentNative(this.argv);
+    if (exitCode !== 0) {
+      this.exit(exitCode);
+    }
+  }
+}
+
+export async function runSwitchboardContextCurrentNative(
+  argv: readonly string[],
+  options: SwitchboardContextCurrentOptions = {}
+): Promise<number> {
+  const runner = options.runner ?? await loadSwitchboardContextCurrentRunner();
+  if (runner) {
+    return runSwitchboardContextCurrentInProcess(runner, argv);
+  }
+  console.error("[baran] Error: internal proof baran runner runSwitchboardContextCurrent is unavailable.");
+  return 1;
+}
+
+async function loadSwitchboardContextCurrentRunner(): Promise<RunSwitchboardContextCurrent | undefined> {
+  return defaultRunSwitchboardContextCurrentRunner;
+}
+
+async function runSwitchboardContextCurrentInProcess(
+  runner: RunSwitchboardContextCurrent,
+  argv: readonly string[]
+): Promise<number> {
+  try {
+    await runner(argv);
+    return typeof process.exitCode === "number" ? process.exitCode : 0;
+  } catch (error) {
+    if (!switchboardOutputHandled(error)) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[baran] ${message}`);
+    }
+    return 1;
+  }
+}
+
+function switchboardOutputHandled(error: unknown): boolean {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      (error as { switchboardOutputHandled?: boolean }).switchboardOutputHandled
+  );
+}
+
+function printSwitchboardContextCurrentHelp(bin: string): void {
+  console.log(`Show the current Baran context.
+
+USAGE
+  $ ${bin} baran context current [--json]
+
+FLAGS
+  --project-dir <path> Baran project directory.
+  --context <name>     Baran context name for runtime defaults.
+  --no-project         Ignore switchboard.json and .switchboard state.
+  --json               Print sanitized machine-readable output.
+
+DESCRIPTION
+  Read-only local context inspection. It prints the selected context name,
+  whether it came from project or global selection, and sanitized context
+  defaults. It does not add, select, or edit contexts.
+
+EXAMPLES
+  $ ${bin} baran context current
+  $ ${bin} baran context current --json
+  $ ${bin} baran context current --context mainnet`);
+}

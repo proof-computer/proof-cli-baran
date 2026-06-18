@@ -1,7 +1,7 @@
 {
-  "name": "@proof-computer/proof-cli-switchboard",
+  "name": "@proof-computer/proof-cli-baran",
   "version": "0.3.0",
-  "description": "Switchboard plugin for the PROOF command line interface.",
+  "description": "Baran plugin for the PROOF command line interface.",
   "private": false,
   "type": "module",
   "packageManager": "pnpm@10.33.0",
@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/proof-computer/proof-cli-switchboard.git"
+    "url": "git+https://github.com/proof-computer/proof-cli-baran.git"
   },
   "engines": {
     "node": ">=22"
@@ -73,8 +73,8 @@
     "commands": "./dist/commands",
     "topicSeparator": " ",
     "topics": {
-      "switchboard": {
-        "description": "Switchboard ingress commands"
+      "baran": {
+        "description": "Baran ingress commands"
       }
     }
   },

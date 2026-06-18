@@ -16,138 +16,138 @@ import {
   readLaunchDemoCapacity,
   selectPinnedDeployCapacity
 } from "../src/switchboard-core/cli/src/index.js";
-import { runSwitchboardCatalogBuildNative } from "../src/commands/switchboard/catalog/build.js";
-import { runSwitchboardCatalogInspectNative } from "../src/commands/switchboard/catalog/inspect.js";
-import { runSwitchboardCatalogSetStateNative } from "../src/commands/switchboard/catalog/set-state.js";
-import { runSwitchboardCatalogVerifyNative } from "../src/commands/switchboard/catalog/verify.js";
-import { runSwitchboardBootstrapNative } from "../src/commands/switchboard/bootstrap.js";
-import { runSwitchboardClaimNative } from "../src/commands/switchboard/claim.js";
-import { runSwitchboardClaimableNative } from "../src/commands/switchboard/claimable.js";
-import { runSwitchboardContextAddNative } from "../src/commands/switchboard/context/add.js";
-import { runSwitchboardContextCurrentNative } from "../src/commands/switchboard/context/current.js";
-import { runSwitchboardContextDnsClearNative } from "../src/commands/switchboard/context/dns/clear.js";
-import { runSwitchboardContextDnsSetNative } from "../src/commands/switchboard/context/dns/set.js";
-import { runSwitchboardContextListNative } from "../src/commands/switchboard/context/list.js";
-import { runSwitchboardContextSetNative } from "../src/commands/switchboard/context/set.js";
-import { runSwitchboardContextUseNative } from "../src/commands/switchboard/context/use.js";
-import { runSwitchboardDeployNative } from "../src/commands/switchboard/deploy.js";
-import { runSwitchboardDeployDoctorNative } from "../src/commands/switchboard/deploy/doctor.js";
-import { runSwitchboardDeployResumeNative } from "../src/commands/switchboard/deploy/resume.js";
-import { runSwitchboardDeployStatusNative } from "../src/commands/switchboard/deploy/status.js";
-import { runSwitchboardDeploymentStatusNative } from "../src/commands/switchboard/status.js";
-import { runSwitchboardGatewayDiscoverNative } from "../src/commands/switchboard/gateway/discover.js";
-import { runSwitchboardGatewaySetupNative } from "../src/commands/switchboard/gateway/setup.js";
-import { runSwitchboardGatewayStatusNative } from "../src/commands/switchboard/gateway/status.js";
-import { runSwitchboardGatewayUpgradeNative } from "../src/commands/switchboard/gateway/upgrade.js";
-import { runSwitchboardHostnameAddNative } from "../src/commands/switchboard/hostname/add.js";
-import { runSwitchboardHostnameRemoveNative } from "../src/commands/switchboard/hostname/remove.js";
-import { runSwitchboardHostnameStatusNative } from "../src/commands/switchboard/hostname/status.js";
-import { runSwitchboardInitNative } from "../src/commands/switchboard/init.js";
-import { runSwitchboardLaunchDemoNative } from "../src/commands/switchboard/launch-demo.js";
-import { runSwitchboardPreflightNative } from "../src/commands/switchboard/preflight.js";
-import { runSwitchboardProjectInitNative } from "../src/commands/switchboard/project/init.js";
-import { runSwitchboardProjectShowNative } from "../src/commands/switchboard/project/show.js";
-import { runSwitchboardRefundNative } from "../src/commands/switchboard/refund.js";
-import { runSwitchboardRefundableNative } from "../src/commands/switchboard/refundable.js";
-import { runSwitchboardOpsNative } from "../src/commands/switchboard/ops.js";
-import { runSwitchboardRelayBackfillSpecsNative } from "../src/commands/switchboard/relay/backfill-specs.js";
-import { runSwitchboardRelayBudgetNative } from "../src/commands/switchboard/relay/budget.js";
-import { runSwitchboardRelayCatalogBuildNative } from "../src/commands/switchboard/relay/catalog/build.js";
+import { runSwitchboardCatalogBuildNative } from "../src/commands/baran/catalog/build.js";
+import { runSwitchboardCatalogInspectNative } from "../src/commands/baran/catalog/inspect.js";
+import { runSwitchboardCatalogSetStateNative } from "../src/commands/baran/catalog/set-state.js";
+import { runSwitchboardCatalogVerifyNative } from "../src/commands/baran/catalog/verify.js";
+import { runSwitchboardBootstrapNative } from "../src/commands/baran/bootstrap.js";
+import { runSwitchboardClaimNative } from "../src/commands/baran/claim.js";
+import { runSwitchboardClaimableNative } from "../src/commands/baran/claimable.js";
+import { runSwitchboardContextAddNative } from "../src/commands/baran/context/add.js";
+import { runSwitchboardContextCurrentNative } from "../src/commands/baran/context/current.js";
+import { runSwitchboardContextDnsClearNative } from "../src/commands/baran/context/dns/clear.js";
+import { runSwitchboardContextDnsSetNative } from "../src/commands/baran/context/dns/set.js";
+import { runSwitchboardContextListNative } from "../src/commands/baran/context/list.js";
+import { runSwitchboardContextSetNative } from "../src/commands/baran/context/set.js";
+import { runSwitchboardContextUseNative } from "../src/commands/baran/context/use.js";
+import { runSwitchboardDeployNative } from "../src/commands/baran/deploy.js";
+import { runSwitchboardDeployDoctorNative } from "../src/commands/baran/deploy/doctor.js";
+import { runSwitchboardDeployResumeNative } from "../src/commands/baran/deploy/resume.js";
+import { runSwitchboardDeployStatusNative } from "../src/commands/baran/deploy/status.js";
+import { runSwitchboardDeploymentStatusNative } from "../src/commands/baran/status.js";
+import { runSwitchboardGatewayDiscoverNative } from "../src/commands/baran/gateway/discover.js";
+import { runSwitchboardGatewaySetupNative } from "../src/commands/baran/gateway/setup.js";
+import { runSwitchboardGatewayStatusNative } from "../src/commands/baran/gateway/status.js";
+import { runSwitchboardGatewayUpgradeNative } from "../src/commands/baran/gateway/upgrade.js";
+import { runSwitchboardHostnameAddNative } from "../src/commands/baran/hostname/add.js";
+import { runSwitchboardHostnameRemoveNative } from "../src/commands/baran/hostname/remove.js";
+import { runSwitchboardHostnameStatusNative } from "../src/commands/baran/hostname/status.js";
+import { runSwitchboardInitNative } from "../src/commands/baran/init.js";
+import { runSwitchboardLaunchDemoNative } from "../src/commands/baran/launch-demo.js";
+import { runSwitchboardPreflightNative } from "../src/commands/baran/preflight.js";
+import { runSwitchboardProjectInitNative } from "../src/commands/baran/project/init.js";
+import { runSwitchboardProjectShowNative } from "../src/commands/baran/project/show.js";
+import { runSwitchboardRefundNative } from "../src/commands/baran/refund.js";
+import { runSwitchboardRefundableNative } from "../src/commands/baran/refundable.js";
+import { runSwitchboardOpsNative } from "../src/commands/baran/ops.js";
+import { runSwitchboardRelayBackfillSpecsNative } from "../src/commands/baran/relay/backfill-specs.js";
+import { runSwitchboardRelayBudgetNative } from "../src/commands/baran/relay/budget.js";
+import { runSwitchboardRelayCatalogBuildNative } from "../src/commands/baran/relay/catalog/build.js";
 import SwitchboardRelayCatalogSetState, {
   runSwitchboardRelayCatalogSetStateNative
-} from "../src/commands/switchboard/relay/catalog/set-state.js";
-import { runSwitchboardRelayDnsApplyNative } from "../src/commands/switchboard/relay/dns/apply.js";
-import { runSwitchboardRelayDnsPlanNative } from "../src/commands/switchboard/relay/dns/plan.js";
-import { runSwitchboardRelayDnsRemoveNative } from "../src/commands/switchboard/relay/dns/remove.js";
-import { runSwitchboardRelayDnsVerifyNative } from "../src/commands/switchboard/relay/dns/verify.js";
-import { runSwitchboardRelayDiffNative } from "../src/commands/switchboard/relay/diff.js";
-import { runSwitchboardRelayKeygenNative } from "../src/commands/switchboard/relay/keygen.js";
-import { runSwitchboardRelayListNative } from "../src/commands/switchboard/relay/list.js";
-import { runSwitchboardRelayLogsNative } from "../src/commands/switchboard/relay/logs.js";
-import { runSwitchboardRelayPickProcessorNative } from "../src/commands/switchboard/relay/pick-processor.js";
-import { runSwitchboardRelayScaffoldNative } from "../src/commands/switchboard/relay/scaffold.js";
-import { runSwitchboardRelayStatusNative } from "../src/commands/switchboard/relay/status.js";
-import { runSwitchboardRelaySyncNative } from "../src/commands/switchboard/relay/sync.js";
-import { runSwitchboardRelayWatchNative } from "../src/commands/switchboard/relay/watch.js";
-import { runSwitchboardRelayVerifyNative } from "../src/commands/switchboard/relay/verify.js";
-import { runSwitchboardRelayWhoamiNative } from "../src/commands/switchboard/relay/whoami.js";
-import { runSwitchboardSessionRegisterNative } from "../src/commands/switchboard/session/register.js";
-import { runSwitchboardSessionRefundableNative } from "../src/commands/switchboard/session/refundable.js";
-import { runSwitchboardSessionRefundNative } from "../src/commands/switchboard/session/refund.js";
-import { runSwitchboardSessionStatusNative } from "../src/commands/switchboard/session/status.js";
-import { runSwitchboardValidatorLaunchNative } from "../src/commands/switchboard/validator/launch.js";
-import { runSwitchboardValidatorScriptNative } from "../src/commands/switchboard/validator/script.js";
+} from "../src/commands/baran/relay/catalog/set-state.js";
+import { runSwitchboardRelayDnsApplyNative } from "../src/commands/baran/relay/dns/apply.js";
+import { runSwitchboardRelayDnsPlanNative } from "../src/commands/baran/relay/dns/plan.js";
+import { runSwitchboardRelayDnsRemoveNative } from "../src/commands/baran/relay/dns/remove.js";
+import { runSwitchboardRelayDnsVerifyNative } from "../src/commands/baran/relay/dns/verify.js";
+import { runSwitchboardRelayDiffNative } from "../src/commands/baran/relay/diff.js";
+import { runSwitchboardRelayKeygenNative } from "../src/commands/baran/relay/keygen.js";
+import { runSwitchboardRelayListNative } from "../src/commands/baran/relay/list.js";
+import { runSwitchboardRelayLogsNative } from "../src/commands/baran/relay/logs.js";
+import { runSwitchboardRelayPickProcessorNative } from "../src/commands/baran/relay/pick-processor.js";
+import { runSwitchboardRelayScaffoldNative } from "../src/commands/baran/relay/scaffold.js";
+import { runSwitchboardRelayStatusNative } from "../src/commands/baran/relay/status.js";
+import { runSwitchboardRelaySyncNative } from "../src/commands/baran/relay/sync.js";
+import { runSwitchboardRelayWatchNative } from "../src/commands/baran/relay/watch.js";
+import { runSwitchboardRelayVerifyNative } from "../src/commands/baran/relay/verify.js";
+import { runSwitchboardRelayWhoamiNative } from "../src/commands/baran/relay/whoami.js";
+import { runSwitchboardSessionRegisterNative } from "../src/commands/baran/session/register.js";
+import { runSwitchboardSessionRefundableNative } from "../src/commands/baran/session/refundable.js";
+import { runSwitchboardSessionRefundNative } from "../src/commands/baran/session/refund.js";
+import { runSwitchboardSessionStatusNative } from "../src/commands/baran/session/status.js";
+import { runSwitchboardValidatorLaunchNative } from "../src/commands/baran/validator/launch.js";
+import { runSwitchboardValidatorScriptNative } from "../src/commands/baran/validator/script.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const commandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard.ts")).href;
-const catalogBuildCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "catalog", "build.ts")).href;
-const catalogInspectCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "catalog", "inspect.ts")).href;
-const catalogSetStateCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "catalog", "set-state.ts")).href;
-const catalogVerifyCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "catalog", "verify.ts")).href;
-const bootstrapCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "bootstrap.ts")).href;
-const claimCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "claim.ts")).href;
-const claimableCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "claimable.ts")).href;
-const contextAddCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "context", "add.ts")).href;
-const contextCurrentCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "context", "current.ts")).href;
-const contextDnsClearCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "context", "dns", "clear.ts")).href;
-const contextDnsSetCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "context", "dns", "set.ts")).href;
-const contextListCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "context", "list.ts")).href;
-const contextSetCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "context", "set.ts")).href;
-const contextUseCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "context", "use.ts")).href;
-const deployCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "deploy.ts")).href;
-const doctorCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "deploy", "doctor.ts")).href;
-const resumeCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "deploy", "resume.ts")).href;
-const deployStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "deploy", "status.ts")).href;
-const gatewayDiscoverCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "gateway", "discover.ts")).href;
-const gatewaySetupCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "gateway", "setup.ts")).href;
-const gatewayStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "gateway", "status.ts")).href;
-const gatewayUpgradeCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "gateway", "upgrade.ts")).href;
-const hostnameAddCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "hostname", "add.ts")).href;
-const hostnameRemoveCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "hostname", "remove.ts")).href;
-const launchDemoCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "launch-demo.ts")).href;
-const hostnameStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "hostname", "status.ts")).href;
-const initCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "init.ts")).href;
-const projectShowCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "project", "show.ts")).href;
-const projectInitCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "project", "init.ts")).href;
-const preflightCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "preflight.ts")).href;
-const refundCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "refund.ts")).href;
-const refundableCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "refundable.ts")).href;
-const opsCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "ops.ts")).href;
-const relayBackfillSpecsCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "backfill-specs.ts")).href;
-const relayBudgetCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "budget.ts")).href;
-const relayCatalogBuildCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "catalog", "build.ts")).href;
-const relayCatalogSetStateCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "catalog", "set-state.ts")).href;
-const relayDnsApplyCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "dns", "apply.ts")).href;
-const relayDnsPlanCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "dns", "plan.ts")).href;
-const relayDnsRemoveCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "dns", "remove.ts")).href;
-const relayDnsVerifyCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "dns", "verify.ts")).href;
-const relayDiffCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "diff.ts")).href;
-const relayKeygenCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "keygen.ts")).href;
-const relayListCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "list.ts")).href;
-const relayLogsCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "logs.ts")).href;
-const relayPickProcessorCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "pick-processor.ts")).href;
-const relayScaffoldCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "scaffold.ts")).href;
-const relayStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "status.ts")).href;
-const relaySyncCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "sync.ts")).href;
-const relayWatchCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "watch.ts")).href;
-const relayVerifyCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "verify.ts")).href;
-const relayWhoamiCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "relay", "whoami.ts")).href;
-const sessionRegisterCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "session", "register.ts")).href;
-const sessionRefundableCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "session", "refundable.ts")).href;
-const sessionRefundCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "session", "refund.ts")).href;
-const sessionStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "session", "status.ts")).href;
-const validatorLaunchCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "validator", "launch.ts")).href;
-const validatorScriptCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "validator", "script.ts")).href;
-const deploymentStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "switchboard", "status.ts")).href;
+const catalogBuildCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "catalog", "build.ts")).href;
+const catalogInspectCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "catalog", "inspect.ts")).href;
+const catalogSetStateCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "catalog", "set-state.ts")).href;
+const catalogVerifyCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "catalog", "verify.ts")).href;
+const bootstrapCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "bootstrap.ts")).href;
+const claimCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "claim.ts")).href;
+const claimableCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "claimable.ts")).href;
+const contextAddCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "context", "add.ts")).href;
+const contextCurrentCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "context", "current.ts")).href;
+const contextDnsClearCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "context", "dns", "clear.ts")).href;
+const contextDnsSetCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "context", "dns", "set.ts")).href;
+const contextListCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "context", "list.ts")).href;
+const contextSetCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "context", "set.ts")).href;
+const contextUseCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "context", "use.ts")).href;
+const deployCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "deploy.ts")).href;
+const doctorCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "deploy", "doctor.ts")).href;
+const resumeCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "deploy", "resume.ts")).href;
+const deployStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "deploy", "status.ts")).href;
+const gatewayDiscoverCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "gateway", "discover.ts")).href;
+const gatewaySetupCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "gateway", "setup.ts")).href;
+const gatewayStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "gateway", "status.ts")).href;
+const gatewayUpgradeCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "gateway", "upgrade.ts")).href;
+const hostnameAddCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "hostname", "add.ts")).href;
+const hostnameRemoveCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "hostname", "remove.ts")).href;
+const launchDemoCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "launch-demo.ts")).href;
+const hostnameStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "hostname", "status.ts")).href;
+const initCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "init.ts")).href;
+const projectShowCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "project", "show.ts")).href;
+const projectInitCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "project", "init.ts")).href;
+const preflightCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "preflight.ts")).href;
+const refundCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "refund.ts")).href;
+const refundableCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "refundable.ts")).href;
+const opsCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "ops.ts")).href;
+const relayBackfillSpecsCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "backfill-specs.ts")).href;
+const relayBudgetCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "budget.ts")).href;
+const relayCatalogBuildCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "catalog", "build.ts")).href;
+const relayCatalogSetStateCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "catalog", "set-state.ts")).href;
+const relayDnsApplyCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "dns", "apply.ts")).href;
+const relayDnsPlanCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "dns", "plan.ts")).href;
+const relayDnsRemoveCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "dns", "remove.ts")).href;
+const relayDnsVerifyCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "dns", "verify.ts")).href;
+const relayDiffCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "diff.ts")).href;
+const relayKeygenCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "keygen.ts")).href;
+const relayListCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "list.ts")).href;
+const relayLogsCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "logs.ts")).href;
+const relayPickProcessorCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "pick-processor.ts")).href;
+const relayScaffoldCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "scaffold.ts")).href;
+const relayStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "status.ts")).href;
+const relaySyncCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "sync.ts")).href;
+const relayWatchCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "watch.ts")).href;
+const relayVerifyCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "verify.ts")).href;
+const relayWhoamiCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "relay", "whoami.ts")).href;
+const sessionRegisterCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "session", "register.ts")).href;
+const sessionRefundableCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "session", "refundable.ts")).href;
+const sessionRefundCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "session", "refund.ts")).href;
+const sessionStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "session", "status.ts")).href;
+const validatorLaunchCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "validator", "launch.ts")).href;
+const validatorScriptCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "validator", "script.ts")).href;
+const deploymentStatusCommandUrl = pathToFileURL(path.join(repoRoot, "src", "commands", "baran", "status.ts")).href;
 
-test("prints native switchboard root help through the oclif command", () => {
+test("prints native baran root help through the oclif command", () => {
   const result = runPluginCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Switchboard ingress commands/u);
+  assert.match(result.stdout, /Baran ingress commands/u);
   assert.match(result.stdout, /deploy doctor\|resume\|status/u);
   assert.match(result.stdout, /compatibility bridge has been removed/u);
-  assert.doesNotMatch(result.stdout, /switchboard launch-demo --yes-spend/u);
+  assert.doesNotMatch(result.stdout, /baran launch-demo --yes-spend/u);
 });
 
 test("does not depend on the abandoned switchboard-cli package", () => {
@@ -175,235 +175,235 @@ test("prints native deploy help through the oclif command", () => {
   const result = runDeployCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Deploy a project workload through Switchboard/u);
+  assert.match(result.stdout, /Deploy a project workload through Baran/u);
   assert.match(result.stdout, /--entrypoint/u);
   assert.match(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native launch-demo help through the oclif command", () => {
   const result = runLaunchDemoCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Launch the bundled Switchboard demo/u);
+  assert.match(result.stdout, /Launch the bundled Baran demo/u);
   assert.match(result.stdout, /--yes-spend/u);
   assert.match(result.stdout, /--ha/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native bootstrap help through the oclif command", () => {
   const result = runBootstrapCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Manage Switchboard bootstrap infrastructure/u);
-  assert.match(result.stdout, /switchboard bootstrap host status/u);
-  assert.match(result.stdout, /switchboard bootstrap acurast status/u);
-  assert.doesNotMatch(result.stdout, /switchboard acurast/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.match(result.stdout, /Manage Baran bootstrap infrastructure/u);
+  assert.match(result.stdout, /baran bootstrap host status/u);
+  assert.match(result.stdout, /baran bootstrap acurast status/u);
+  assert.doesNotMatch(result.stdout, /baran acurast/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native ops help through the oclif command", () => {
   const result = runOpsCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Manage Switchboard ops profiles/u);
-  assert.match(result.stdout, /switchboard ops init/u);
+  assert.match(result.stdout, /Manage Baran ops profiles/u);
+  assert.match(result.stdout, /baran ops init/u);
   assert.match(result.stdout, /--bootstrap-host/u);
-  assert.doesNotMatch(result.stdout, /switchboard acurast/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /baran acurast/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native init help through the oclif command", () => {
   const result = runInitCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Initialize a local Switchboard project/u);
+  assert.match(result.stdout, /Initialize a local Baran project/u);
   assert.match(result.stdout, /--template/u);
   assert.match(result.stdout, /--ssh-public-key-file/u);
   assert.doesNotMatch(result.stdout, /--endpoint/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native project init help through the oclif command", () => {
   const result = runProjectInitCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Initialize a local Switchboard project/u);
-  assert.match(result.stdout, /switchboard project init/u);
+  assert.match(result.stdout, /Initialize a local Baran project/u);
+  assert.match(result.stdout, /baran project init/u);
   assert.match(result.stdout, /--force/u);
   assert.doesNotMatch(result.stdout, /--endpoint/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native project show help through the oclif command", () => {
   const result = runProjectShowCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Show local Switchboard project state/u);
+  assert.match(result.stdout, /Show local Baran project state/u);
   assert.match(result.stdout, /--project-dir/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native preflight help through the oclif command", () => {
   const result = runPreflightCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Check Switchboard deploy readiness/u);
+  assert.match(result.stdout, /Check Baran deploy readiness/u);
   assert.match(result.stdout, /--manifest-url/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native top-level status help through the oclif command", () => {
   const result = runDeploymentStatusCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Diagnose a Switchboard deployment/u);
+  assert.match(result.stdout, /Diagnose a Baran deployment/u);
   assert.match(result.stdout, /--session-id/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native session status help through the oclif command", () => {
   const result = runSessionStatusCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Read raw Switchboard Hub session state/u);
+  assert.match(result.stdout, /Read raw Baran Hub session state/u);
   assert.match(result.stdout, /--session-id/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native session register help through the oclif command", () => {
   const result = runSessionRegisterCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Register a funded Switchboard session/u);
+  assert.match(result.stdout, /Register a funded Baran session/u);
   assert.match(result.stdout, /--job-signer-private-key/u);
   assert.match(result.stdout, /--relay-url/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native hostname status help through the oclif command", () => {
   const result = runHostnameStatusCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Check Switchboard customer hostname status/u);
+  assert.match(result.stdout, /Check Baran customer hostname status/u);
   assert.match(result.stdout, /--endpoint/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native hostname add help through the oclif command", () => {
   const result = runHostnameAddCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Attach a Switchboard customer hostname/u);
+  assert.match(result.stdout, /Attach a Baran customer hostname/u);
   assert.match(result.stdout, /--developer-private-key-env/u);
   assert.match(result.stdout, /--byo-tls/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native hostname remove help through the oclif command", () => {
   const result = runHostnameRemoveCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Remove a Switchboard customer hostname/u);
+  assert.match(result.stdout, /Remove a Baran customer hostname/u);
   assert.match(result.stdout, /--developer-private-key-env/u);
   assert.match(result.stdout, /--endpoint/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native validator script help through the oclif command", () => {
   const result = runValidatorScriptCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Look up the approved Switchboard validator script pin/u);
+  assert.match(result.stdout, /Look up the approved Baran validator script pin/u);
   assert.match(result.stdout, /--validator-script-manifest-url/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native validator launch help through the oclif command", () => {
   const result = runValidatorLaunchCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Launch Switchboard validators/u);
-  assert.match(result.stdout, /switchboard validator launch/u);
+  assert.match(result.stdout, /Launch Baran validators/u);
+  assert.match(result.stdout, /baran validator launch/u);
   assert.match(result.stdout, /--processor/u);
   assert.match(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /switchboard acurast/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /baran acurast/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native catalog build help through the oclif command", () => {
   const result = runCatalogBuildCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Build signed Switchboard service catalogs/u);
+  assert.match(result.stdout, /Build signed Baran service catalogs/u);
   assert.match(result.stdout, /--signing-key/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay catalog build help through the oclif command", () => {
   const result = runRelayCatalogBuildCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Build a signed Switchboard relay catalog bundle/u);
+  assert.match(result.stdout, /Build a signed Baran relay catalog bundle/u);
   assert.match(result.stdout, /--specs-dir/u);
   assert.match(result.stdout, /--signing-key/u);
   assert.doesNotMatch(result.stdout, /--json/u);
   assert.doesNotMatch(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay catalog set-state help through the oclif command", () => {
   const result = runRelayCatalogSetStateCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Update local Switchboard relay catalog state/u);
+  assert.match(result.stdout, /Update local Baran relay catalog state/u);
   assert.match(result.stdout, /--catalog-file/u);
   assert.match(result.stdout, /--no-rebuild/u);
   assert.doesNotMatch(result.stdout, /--json/u);
   assert.doesNotMatch(result.stdout, /--yes/u);
   assert.doesNotMatch(result.stdout, /--signing-key/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("aliases relay catalog state to the native relay catalog set-state command", () => {
-  assert.deepEqual(SwitchboardRelayCatalogSetState.aliases, ["switchboard relay catalog state"]);
+  assert.deepEqual(SwitchboardRelayCatalogSetState.aliases, ["baran relay catalog state"]);
 });
 
 test("prints native catalog set-state help through the oclif command", () => {
   const result = runCatalogSetStateCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Update local Switchboard catalog service state/u);
+  assert.match(result.stdout, /Update local Baran catalog service state/u);
   assert.match(result.stdout, /--no-rebuild/u);
   assert.doesNotMatch(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native catalog inspect help through the oclif command", () => {
   const result = runCatalogInspectCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Inspect signed Switchboard service catalogs/u);
+  assert.match(result.stdout, /Inspect signed Baran service catalogs/u);
   assert.match(result.stdout, /--allow-expired/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native catalog verify help through the oclif command", () => {
   const result = runCatalogVerifyCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Verify signed Switchboard service catalogs/u);
+  assert.match(result.stdout, /Verify signed Baran service catalogs/u);
   assert.match(result.stdout, /--allow-unpinned-signer/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native gateway setup help through the oclif command", () => {
   const result = runGatewaySetupCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Prepare a Switchboard gateway host/u);
+  assert.match(result.stdout, /Prepare a Baran gateway host/u);
   assert.match(result.stdout, /--upstream-admission-url/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native gateway discover help through the oclif command", () => {
@@ -412,160 +412,160 @@ test("prints native gateway discover help through the oclif command", () => {
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Check gateway-local Acurast processor readiness/u);
   assert.match(result.stdout, /--gateway-agent-url/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native gateway status help through the oclif command", () => {
   const result = runGatewayStatusCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Show local Switchboard gateway stack status/u);
+  assert.match(result.stdout, /Show local Baran gateway stack status/u);
   assert.match(result.stdout, /--capability-token-env/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay list help through the oclif command", () => {
   const result = runRelayListCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /List Switchboard relay inventory/u);
+  assert.match(result.stdout, /List Baran relay inventory/u);
   assert.match(result.stdout, /--source <local\|live>/u);
   assert.match(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay diff help through the oclif command", () => {
   const result = runRelayDiffCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Compare local Switchboard relay inventory with live discovery/u);
+  assert.match(result.stdout, /Compare local Baran relay inventory with live discovery/u);
   assert.match(result.stdout, /--manifest-url/u);
   assert.match(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay sync help through the oclif command", () => {
   const result = runRelaySyncCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Sync local Switchboard relay inventory from signed discovery/u);
+  assert.match(result.stdout, /Sync local Baran relay inventory from signed discovery/u);
   assert.match(result.stdout, /--manifest-url/u);
   assert.match(result.stdout, /--allow-unpinned-signer/u);
   assert.match(result.stdout, /--dry-run/u);
   assert.doesNotMatch(result.stdout, /--json/u);
   assert.doesNotMatch(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay backfill-specs help through the oclif command", () => {
   const result = runRelayBackfillSpecsCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Backfill local Switchboard relay specs from discovery/u);
+  assert.match(result.stdout, /Backfill local Baran relay specs from discovery/u);
   assert.match(result.stdout, /--target/u);
   assert.match(result.stdout, /--dry-run/u);
-  assert.doesNotMatch(result.stdout, /switchboard acurast/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /baran acurast/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay pick-processor help through the oclif command", () => {
   const result = runRelayPickProcessorCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Inspect Acurast processor availability for a Switchboard relay/u);
+  assert.match(result.stdout, /Inspect Acurast processor availability for a Baran relay/u);
   assert.match(result.stdout, /<relay-id>/u);
   assert.match(result.stdout, /--manager-id/u);
   assert.match(result.stdout, /--pin/u);
   assert.match(result.stdout, /--json/u);
   assert.doesNotMatch(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay logs help through the oclif command", () => {
   const result = runRelayLogsCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Read encrypted Switchboard relay log events/u);
+  assert.match(result.stdout, /Read encrypted Baran relay log events/u);
   assert.match(result.stdout, /--read-url/u);
   assert.match(result.stdout, /--encryption-key-env/u);
   assert.match(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay verify help through the oclif command", () => {
   const result = runRelayVerifyCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Verify a deployed Switchboard relay/u);
+  assert.match(result.stdout, /Verify a deployed Baran relay/u);
   assert.match(result.stdout, /<relay-id>/u);
   assert.match(result.stdout, /--manifest-url/u);
   assert.doesNotMatch(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay dns plan help through the oclif command", () => {
   const result = runRelayDnsPlanCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Plan Switchboard relay DNS records/u);
+  assert.match(result.stdout, /Plan Baran relay DNS records/u);
   assert.match(result.stdout, /<relay-id>/u);
   assert.match(result.stdout, /--spec-file/u);
   assert.match(result.stdout, /--resolvers/u);
   assert.doesNotMatch(result.stdout, /--json/u);
   assert.doesNotMatch(result.stdout, /--yes/u);
   assert.doesNotMatch(result.stdout, /Cloudflare API token/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay dns apply help through the oclif command", () => {
   const result = runRelayDnsApplyCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Apply Switchboard relay DNS records/u);
+  assert.match(result.stdout, /Apply Baran relay DNS records/u);
   assert.match(result.stdout, /<relay-id>/u);
   assert.match(result.stdout, /--token-env/u);
   assert.match(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /switchboard acurast/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /baran acurast/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay dns verify help through the oclif command", () => {
   const result = runRelayDnsVerifyCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Verify Switchboard relay DNS records/u);
+  assert.match(result.stdout, /Verify Baran relay DNS records/u);
   assert.match(result.stdout, /<relay-id>/u);
   assert.match(result.stdout, /--spec-file/u);
   assert.match(result.stdout, /--resolvers/u);
   assert.doesNotMatch(result.stdout, /--json/u);
   assert.doesNotMatch(result.stdout, /--yes/u);
   assert.doesNotMatch(result.stdout, /Cloudflare API token/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay dns remove help through the oclif command", () => {
   const result = runRelayDnsRemoveCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Remove Switchboard relay DNS records/u);
+  assert.match(result.stdout, /Remove Baran relay DNS records/u);
   assert.match(result.stdout, /<relay-id>/u);
   assert.match(result.stdout, /--token-env/u);
   assert.match(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /switchboard acurast/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /baran acurast/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay budget help through the oclif command", () => {
   const result = runRelayBudgetCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Calculate a Switchboard relay execution budget/u);
+  assert.match(result.stdout, /Calculate a Baran relay execution budget/u);
   assert.match(result.stdout, /<duration>/u);
   assert.match(result.stdout, /--rate-per-ms/u);
   assert.match(result.stdout, /--margin-percent/u);
   assert.match(result.stdout, /--update/u);
   assert.match(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay whoami help through the oclif command", () => {
@@ -575,220 +575,220 @@ test("prints native relay whoami help through the oclif command", () => {
   assert.match(result.stdout, /Show the Acurast deployer identity for a relay seed/u);
   assert.match(result.stdout, /--seed-env/u);
   assert.match(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay keygen help through the oclif command", () => {
   const result = runRelayKeygenCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Generate local Switchboard relay key material/u);
+  assert.match(result.stdout, /Generate local Baran relay key material/u);
   assert.match(result.stdout, /<relay-id>/u);
   assert.match(result.stdout, /--env-name/u);
   assert.match(result.stdout, /--unsafe-stdout/u);
   assert.doesNotMatch(result.stdout, /--json/u);
   assert.doesNotMatch(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay scaffold help through the oclif command", () => {
   const result = runRelayScaffoldCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Scaffold a local Switchboard relay spec/u);
+  assert.match(result.stdout, /Scaffold a local Baran relay spec/u);
   assert.match(result.stdout, /<relay-id>/u);
   assert.match(result.stdout, /--target/u);
   assert.match(result.stdout, /--manager-id/u);
   assert.match(result.stdout, /--keygen/u);
   assert.doesNotMatch(result.stdout, /--json/u);
   assert.doesNotMatch(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay status help through the oclif command", () => {
   const result = runRelayStatusCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Probe Switchboard relay health and catalog status/u);
+  assert.match(result.stdout, /Probe Baran relay health and catalog status/u);
   assert.match(result.stdout, /--catalog-file/u);
   assert.doesNotMatch(result.stdout, /--json/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native relay watch help through the oclif command", () => {
   const result = runRelayWatchCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Watch Switchboard relay health transitions/u);
+  assert.match(result.stdout, /Watch Baran relay health transitions/u);
   assert.match(result.stdout, /\[relay-id\]/u);
   assert.match(result.stdout, /--interval-ms/u);
   assert.match(result.stdout, /--max-runs/u);
   assert.doesNotMatch(result.stdout, /--json/u);
   assert.doesNotMatch(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native gateway upgrade help through the oclif command", () => {
   const result = runGatewayUpgradeCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Upgrade the local Switchboard gateway stack/u);
+  assert.match(result.stdout, /Upgrade the local Baran gateway stack/u);
   assert.match(result.stdout, /--keep-image-override/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native claimable help through the oclif command", () => {
   const result = runClaimableCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Check Switchboard claimable rewards/u);
+  assert.match(result.stdout, /Check Baran claimable rewards/u);
   assert.match(result.stdout, /--recipient/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native claim help through the oclif command", () => {
   const result = runClaimCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Claim Switchboard rewards/u);
+  assert.match(result.stdout, /Claim Baran rewards/u);
   assert.match(result.stdout, /--claim-private-key-env/u);
   assert.match(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native refundable help through the oclif command", () => {
   const result = runRefundableCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Check Switchboard refundable session state/u);
+  assert.match(result.stdout, /Check Baran refundable session state/u);
   assert.match(result.stdout, /--session-id/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native session refundable help through the oclif command", () => {
   const result = runSessionRefundableCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Check Switchboard refundable session state/u);
-  assert.match(result.stdout, /switchboard session refundable/u);
+  assert.match(result.stdout, /Check Baran refundable session state/u);
+  assert.match(result.stdout, /baran session refundable/u);
   assert.match(result.stdout, /--session-id/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native refund help through the oclif command", () => {
   const result = runRefundCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Refund a Switchboard session/u);
+  assert.match(result.stdout, /Refund a Baran session/u);
   assert.match(result.stdout, /--developer-private-key-env/u);
   assert.match(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native session refund help through the oclif command", () => {
   const result = runSessionRefundCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Refund a Switchboard session/u);
-  assert.match(result.stdout, /switchboard session refund/u);
+  assert.match(result.stdout, /Refund a Baran session/u);
+  assert.match(result.stdout, /baran session refund/u);
   assert.match(result.stdout, /--developer-private-key-env/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native context list help through the oclif command", () => {
   const result = runContextListCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /List Switchboard contexts/u);
+  assert.match(result.stdout, /List Baran contexts/u);
   assert.match(result.stdout, /--project-dir/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native context current help through the oclif command", () => {
   const result = runContextCurrentCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Show the current Switchboard context/u);
+  assert.match(result.stdout, /Show the current Baran context/u);
   assert.match(result.stdout, /--context/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native context use help through the oclif command", () => {
   const result = runContextUseCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Select the current Switchboard context/u);
+  assert.match(result.stdout, /Select the current Baran context/u);
   assert.match(result.stdout, /--context/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native context set help through the oclif command", () => {
   const result = runContextSetCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Create or update a Switchboard context/u);
+  assert.match(result.stdout, /Create or update a Baran context/u);
   assert.match(result.stdout, /--relay-url/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native context add help through the oclif command", () => {
   const result = runContextAddCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Interactively create a Switchboard context/u);
+  assert.match(result.stdout, /Interactively create a Baran context/u);
   assert.match(result.stdout, /--no-balance-check/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native context dns set help through the oclif command", () => {
   const result = runContextDnsSetCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Attach a DNS provider to a Switchboard context/u);
+  assert.match(result.stdout, /Attach a DNS provider to a Baran context/u);
   assert.match(result.stdout, /--token-env/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native context dns clear help through the oclif command", () => {
   const result = runContextDnsClearCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Detach a DNS provider from a Switchboard context/u);
+  assert.match(result.stdout, /Detach a DNS provider from a Baran context/u);
   assert.match(result.stdout, /context dns remove/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native deploy doctor help through the oclif command", () => {
   const result = runDoctorCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Diagnose Switchboard deploy state/u);
+  assert.match(result.stdout, /Diagnose Baran deploy state/u);
   assert.match(result.stdout, /--probe/u);
   assert.match(result.stdout, /--intent-id/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native deploy status help through the oclif command", () => {
   const result = runStatusCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Read local Switchboard deploy workflow state/u);
+  assert.match(result.stdout, /Read local Baran deploy workflow state/u);
   assert.match(result.stdout, /--run-dir/u);
   assert.match(result.stdout, /--snapshot/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
 test("prints native deploy resume help through the oclif command", () => {
   const result = runResumeCommand(["--help"]);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Resume a single-replica Switchboard deploy workflow/u);
+  assert.match(result.stdout, /Resume a single-replica Baran deploy workflow/u);
   assert.match(result.stdout, /--allow-late-funding/u);
   assert.match(result.stdout, /--yes/u);
-  assert.doesNotMatch(result.stdout, /Switchboard, a PROOF project/u);
+  assert.doesNotMatch(result.stdout, /Baran, a PROOF project/u);
 });
 
-test("forwards native deploy doctor args to the local Switchboard runner", async () => {
+test("forwards native deploy doctor args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardDeployDoctorNative(["--json", "--intent-id", "di_doctor"], {
     runner: async (argv) => {
@@ -800,7 +800,7 @@ test("forwards native deploy doctor args to the local Switchboard runner", async
   assert.deepEqual(forwarded, ["--json", "--intent-id", "di_doctor"]);
 });
 
-test("forwards native deploy status args to the local Switchboard runner", async () => {
+test("forwards native deploy status args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardDeployStatusNative(["--json", "--run-dir", ".switchboard/runs/test"], {
     runner: async (argv) => {
@@ -812,7 +812,7 @@ test("forwards native deploy status args to the local Switchboard runner", async
   assert.deepEqual(forwarded, ["--json", "--run-dir", ".switchboard/runs/test"]);
 });
 
-test("forwards native deploy resume args to the local Switchboard runner", async () => {
+test("forwards native deploy resume args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardDeployResumeNative(["--yes", "--json", "--run-dir", ".switchboard/runs/test"], {
     runner: async (argv) => {
@@ -824,7 +824,7 @@ test("forwards native deploy resume args to the local Switchboard runner", async
   assert.deepEqual(forwarded, ["--yes", "--json", "--run-dir", ".switchboard/runs/test"]);
 });
 
-test("forwards native init args to the local Switchboard runner", async () => {
+test("forwards native init args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardInitNative(["--project", "demo", "--context", "mainnet", "--json"], {
     runner: async (argv) => {
@@ -850,7 +850,7 @@ test("rejects endpoint flags before forwarding native init", async () => {
   assert.equal(called, false);
 });
 
-test("forwards native project init args to the local Switchboard runner", async () => {
+test("forwards native project init args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardProjectInitNative(["--template", "ssh", "--distro", "ubuntu", "--json"], {
     runner: async (argv) => {
@@ -876,7 +876,7 @@ test("rejects endpoint flags before forwarding native project init", async () =>
   assert.equal(called, false);
 });
 
-test("forwards native project show args to the local Switchboard runner", async () => {
+test("forwards native project show args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardProjectShowNative(["--json", "--project-dir", "./app"], {
     runner: async (argv) => {
@@ -888,7 +888,7 @@ test("forwards native project show args to the local Switchboard runner", async 
   assert.deepEqual(forwarded, ["--json", "--project-dir", "./app"]);
 });
 
-test("forwards native preflight args to the local Switchboard runner", async () => {
+test("forwards native preflight args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardPreflightNative(["--json", "--manifest-url", "https://control.example/manifest"], {
     runner: async (argv) => {
@@ -900,7 +900,7 @@ test("forwards native preflight args to the local Switchboard runner", async () 
   assert.deepEqual(forwarded, ["--json", "--manifest-url", "https://control.example/manifest"]);
 });
 
-test("forwards native top-level status args to the local Switchboard runner", async () => {
+test("forwards native top-level status args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardDeploymentStatusNative(["--json", "--report", "report.json"], {
     runner: async (argv) => {
@@ -912,7 +912,7 @@ test("forwards native top-level status args to the local Switchboard runner", as
   assert.deepEqual(forwarded, ["--json", "--report", "report.json"]);
 });
 
-test("forwards native session status args to the local Switchboard runner", async () => {
+test("forwards native session status args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardSessionStatusNative(["--json", "--session-id", `0x${"11".repeat(32)}`], {
     runner: async (argv) => {
@@ -924,7 +924,7 @@ test("forwards native session status args to the local Switchboard runner", asyn
   assert.deepEqual(forwarded, ["--json", "--session-id", `0x${"11".repeat(32)}`]);
 });
 
-test("forwards native session register args to the local Switchboard runner", async () => {
+test("forwards native session register args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardSessionRegisterNative(
     ["--yes", "--session-id", `0x${"11".repeat(32)}`, "--relay-url", "https://relay.example"],
@@ -939,7 +939,7 @@ test("forwards native session register args to the local Switchboard runner", as
   assert.deepEqual(forwarded, ["--yes", "--session-id", `0x${"11".repeat(32)}`, "--relay-url", "https://relay.example"]);
 });
 
-test("forwards native hostname status args to the local Switchboard runner", async () => {
+test("forwards native hostname status args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardHostnameStatusNative(["app.example.com", "--endpoint", "demo.ingress.example", "--json"], {
     runner: async (argv) => {
@@ -951,7 +951,7 @@ test("forwards native hostname status args to the local Switchboard runner", asy
   assert.deepEqual(forwarded, ["app.example.com", "--endpoint", "demo.ingress.example", "--json"]);
 });
 
-test("forwards native hostname add args to the local Switchboard runner", async () => {
+test("forwards native hostname add args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardHostnameAddNative(
     ["app.example.com", "--endpoint", "demo.ingress.example", "--developer-private-key-env", "DEVELOPER_PRIVATE_KEY", "--json"],
@@ -966,7 +966,7 @@ test("forwards native hostname add args to the local Switchboard runner", async 
   assert.deepEqual(forwarded, ["app.example.com", "--endpoint", "demo.ingress.example", "--developer-private-key-env", "DEVELOPER_PRIVATE_KEY", "--json"]);
 });
 
-test("forwards native hostname remove args to the local Switchboard runner", async () => {
+test("forwards native hostname remove args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardHostnameRemoveNative(
     ["app.example.com", "--endpoint", "demo.ingress.example", "--developer-private-key-env", "DEVELOPER_PRIVATE_KEY", "--json"],
@@ -981,7 +981,7 @@ test("forwards native hostname remove args to the local Switchboard runner", asy
   assert.deepEqual(forwarded, ["app.example.com", "--endpoint", "demo.ingress.example", "--developer-private-key-env", "DEVELOPER_PRIVATE_KEY", "--json"]);
 });
 
-test("forwards native validator script args to the local Switchboard runner", async () => {
+test("forwards native validator script args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardValidatorScriptNative(["--json", "--validator-script-manifest-url", "https://control.example/validator-script.json"], {
     runner: async (argv) => {
@@ -993,7 +993,7 @@ test("forwards native validator script args to the local Switchboard runner", as
   assert.deepEqual(forwarded, ["--json", "--validator-script-manifest-url", "https://control.example/validator-script.json"]);
 });
 
-test("forwards native validator launch args to the local Switchboard runner", async () => {
+test("forwards native validator launch args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardValidatorLaunchNative(["--processor", "5CC2L...", "--yes", "--json"], {
     runner: async (argv) => {
@@ -1005,7 +1005,7 @@ test("forwards native validator launch args to the local Switchboard runner", as
   assert.deepEqual(forwarded, ["--processor", "5CC2L...", "--yes", "--json"]);
 });
 
-test("forwards native catalog build args to the local Switchboard runner", async () => {
+test("forwards native catalog build args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardCatalogBuildNative(["--spec", "catalogs.json", "--output", "service-catalogs.signed.json", "--stdout"], {
     runner: async (argv) => {
@@ -1017,7 +1017,7 @@ test("forwards native catalog build args to the local Switchboard runner", async
   assert.deepEqual(forwarded, ["--spec", "catalogs.json", "--output", "service-catalogs.signed.json", "--stdout"]);
 });
 
-test("forwards native catalog set-state args to the local Switchboard runner", async () => {
+test("forwards native catalog set-state args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardCatalogSetStateNative(
     ["relay", "relay-d", "active", "--spec", "catalogs.json", "--output", "service-catalogs.signed.json", "--stdout"],
@@ -1032,7 +1032,7 @@ test("forwards native catalog set-state args to the local Switchboard runner", a
   assert.deepEqual(forwarded, ["relay", "relay-d", "active", "--spec", "catalogs.json", "--output", "service-catalogs.signed.json", "--stdout"]);
 });
 
-test("forwards native catalog inspect args to the local Switchboard runner", async () => {
+test("forwards native catalog inspect args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardCatalogInspectNative(["--file", "catalogs.json", "--signer", "5...", "--json"], {
     runner: async (argv) => {
@@ -1044,7 +1044,7 @@ test("forwards native catalog inspect args to the local Switchboard runner", asy
   assert.deepEqual(forwarded, ["--file", "catalogs.json", "--signer", "5...", "--json"]);
 });
 
-test("forwards native catalog verify args to the local Switchboard runner", async () => {
+test("forwards native catalog verify args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardCatalogVerifyNative(
     ["--manifest-url", "https://control.example/v1/network-manifest", "--manifest-signer", "5...", "--json"],
@@ -1059,7 +1059,7 @@ test("forwards native catalog verify args to the local Switchboard runner", asyn
   assert.deepEqual(forwarded, ["--manifest-url", "https://control.example/v1/network-manifest", "--manifest-signer", "5...", "--json"]);
 });
 
-test("forwards native gateway setup args to the local Switchboard runner", async () => {
+test("forwards native gateway setup args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardGatewaySetupNative(["--gateway-id", "switchboard-az-01", "--dry-run", "--json"], {
     runner: async (argv) => {
@@ -1071,7 +1071,7 @@ test("forwards native gateway setup args to the local Switchboard runner", async
   assert.deepEqual(forwarded, ["--gateway-id", "switchboard-az-01", "--dry-run", "--json"]);
 });
 
-test("forwards native gateway discover args to the local Switchboard runner", async () => {
+test("forwards native gateway discover args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardGatewayDiscoverNative(["--manager-id", "9470", "--limit", "3", "--json"], {
     runner: async (argv) => {
@@ -1083,7 +1083,7 @@ test("forwards native gateway discover args to the local Switchboard runner", as
   assert.deepEqual(forwarded, ["--manager-id", "9470", "--limit", "3", "--json"]);
 });
 
-test("forwards native gateway status args to the local Switchboard runner", async () => {
+test("forwards native gateway status args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardGatewayStatusNative(["--project-dir", "/srv/proof", "--json"], {
     runner: async (argv) => {
@@ -1095,7 +1095,7 @@ test("forwards native gateway status args to the local Switchboard runner", asyn
   assert.deepEqual(forwarded, ["--project-dir", "/srv/proof", "--json"]);
 });
 
-test("forwards native relay list args to the local Switchboard runner", async () => {
+test("forwards native relay list args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayListNative(["--source", "live", "--json"], {
     runner: async (argv) => {
@@ -1107,7 +1107,7 @@ test("forwards native relay list args to the local Switchboard runner", async ()
   assert.deepEqual(forwarded, ["--source", "live", "--json"]);
 });
 
-test("forwards native relay diff args to the local Switchboard runner", async () => {
+test("forwards native relay diff args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayDiffNative(
     ["--manifest-url", "https://control.example/v1/network-manifest", "--manifest-signer", "5Signer", "--json"],
@@ -1128,7 +1128,7 @@ test("forwards native relay diff args to the local Switchboard runner", async ()
   ]);
 });
 
-test("forwards native relay backfill-specs args to the local Switchboard runner", async () => {
+test("forwards native relay backfill-specs args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayBackfillSpecsNative(
     ["--target", "acurast", "--manifest-url", "https://control.example/v1/network-manifest", "--dry-run"],
@@ -1143,7 +1143,7 @@ test("forwards native relay backfill-specs args to the local Switchboard runner"
   assert.deepEqual(forwarded, ["--target", "acurast", "--manifest-url", "https://control.example/v1/network-manifest", "--dry-run"]);
 });
 
-test("forwards native relay pick-processor args to the local Switchboard runner", async () => {
+test("forwards native relay pick-processor args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayPickProcessorNative(
     ["relay-d", "--pin", "auto", "--exclude", "5FHneW46xGXgs5mUiveU4sbTyGBzmst6m6p4Yc4AG4LQbQ9", "--json"],
@@ -1165,7 +1165,7 @@ test("forwards native relay pick-processor args to the local Switchboard runner"
   ]);
 });
 
-test("forwards native relay logs args to the local Switchboard runner", async () => {
+test("forwards native relay logs args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayLogsNative(
     ["relay-d", "--read-url", "https://control.example/v1/log-sinks/sink/events", "--limit", "20", "--json"],
@@ -1187,7 +1187,7 @@ test("forwards native relay logs args to the local Switchboard runner", async ()
   ]);
 });
 
-test("forwards native relay verify args to the local Switchboard runner", async () => {
+test("forwards native relay verify args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayVerifyNative(
     ["relay-d", "--manifest-url", "https://control.example/v1/network-manifest", "--manifest-signer", "5Signer"],
@@ -1208,7 +1208,7 @@ test("forwards native relay verify args to the local Switchboard runner", async 
   ]);
 });
 
-test("forwards native relay dns plan args to the local Switchboard runner", async () => {
+test("forwards native relay dns plan args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayDnsPlanNative(
     ["relay-d", "--spec", "relays/relay-d.json", "--resolvers", "1.1.1.1,8.8.8.8"],
@@ -1223,7 +1223,7 @@ test("forwards native relay dns plan args to the local Switchboard runner", asyn
   assert.deepEqual(forwarded, ["relay-d", "--spec", "relays/relay-d.json", "--resolvers", "1.1.1.1,8.8.8.8"]);
 });
 
-test("forwards native relay dns apply args to the local Switchboard runner", async () => {
+test("forwards native relay dns apply args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayDnsApplyNative(["relay-d", "--spec", "relays/relay-d.json", "--yes"], {
     runner: async (argv) => {
@@ -1235,7 +1235,7 @@ test("forwards native relay dns apply args to the local Switchboard runner", asy
   assert.deepEqual(forwarded, ["relay-d", "--spec", "relays/relay-d.json", "--yes"]);
 });
 
-test("forwards native relay dns verify args to the local Switchboard runner", async () => {
+test("forwards native relay dns verify args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayDnsVerifyNative(
     ["relay-d", "--spec-file", "relays/relay-d.json", "--resolvers", "1.1.1.1,8.8.8.8"],
@@ -1250,7 +1250,7 @@ test("forwards native relay dns verify args to the local Switchboard runner", as
   assert.deepEqual(forwarded, ["relay-d", "--spec-file", "relays/relay-d.json", "--resolvers", "1.1.1.1,8.8.8.8"]);
 });
 
-test("forwards native relay dns remove args to the local Switchboard runner", async () => {
+test("forwards native relay dns remove args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayDnsRemoveNative(["relay-d", "--spec-file", "relays/relay-d.json", "--yes"], {
     runner: async (argv) => {
@@ -1262,7 +1262,7 @@ test("forwards native relay dns remove args to the local Switchboard runner", as
   assert.deepEqual(forwarded, ["relay-d", "--spec-file", "relays/relay-d.json", "--yes"]);
 });
 
-test("forwards native relay budget args to the local Switchboard runner", async () => {
+test("forwards native relay budget args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayBudgetNative(
     ["7d", "--rate-per-ms", "20000", "--margin-percent", "10", "--update", "relays/relay-d.json", "--json"],
@@ -1286,7 +1286,7 @@ test("forwards native relay budget args to the local Switchboard runner", async 
   ]);
 });
 
-test("forwards native relay catalog build args to the local Switchboard runner", async () => {
+test("forwards native relay catalog build args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayCatalogBuildNative(
     ["--specs-dir", "relays", "--output", "service-catalogs.signed.json", "--stdout"],
@@ -1301,7 +1301,7 @@ test("forwards native relay catalog build args to the local Switchboard runner",
   assert.deepEqual(forwarded, ["--specs-dir", "relays", "--output", "service-catalogs.signed.json", "--stdout"]);
 });
 
-test("forwards native relay catalog set-state args to the local Switchboard runner", async () => {
+test("forwards native relay catalog set-state args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayCatalogSetStateNative(
     ["relay-d", "draining", "--catalog-file", "relays/catalog.json", "--no-rebuild"],
@@ -1316,7 +1316,7 @@ test("forwards native relay catalog set-state args to the local Switchboard runn
   assert.deepEqual(forwarded, ["relay-d", "draining", "--catalog-file", "relays/catalog.json", "--no-rebuild"]);
 });
 
-test("forwards native relay sync args to the local Switchboard runner", async () => {
+test("forwards native relay sync args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelaySyncNative(
     ["--manifest-url", "https://control.example/v1/network-manifest", "--dry-run"],
@@ -1343,7 +1343,7 @@ test("returns nonzero when native relay verify reports failed checks", async () 
   assert.equal(exitCode, 1);
 });
 
-test("forwards native relay whoami args to the local Switchboard runner", async () => {
+test("forwards native relay whoami args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayWhoamiNative(["relay-d", "--seed-env", "RELAY_D_SEED", "--json"], {
     runner: async (argv) => {
@@ -1355,7 +1355,7 @@ test("forwards native relay whoami args to the local Switchboard runner", async 
   assert.deepEqual(forwarded, ["relay-d", "--seed-env", "RELAY_D_SEED", "--json"]);
 });
 
-test("forwards native relay keygen args to the local Switchboard runner", async () => {
+test("forwards native relay keygen args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayKeygenNative(
     ["relay-d", "--env-name", "CUSTOM_RELAY_KEY", "--unsafe-stdout"],
@@ -1370,7 +1370,7 @@ test("forwards native relay keygen args to the local Switchboard runner", async 
   assert.deepEqual(forwarded, ["relay-d", "--env-name", "CUSTOM_RELAY_KEY", "--unsafe-stdout"]);
 });
 
-test("forwards native relay scaffold args to the local Switchboard runner", async () => {
+test("forwards native relay scaffold args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayScaffoldNative(
     [
@@ -1394,7 +1394,7 @@ test("forwards native relay scaffold args to the local Switchboard runner", asyn
   assert.deepEqual(forwarded, ["relay-d", "--target", "acurast", "--manager-id", "9470", "--duration", "7d", "--keygen"]);
 });
 
-test("forwards native relay status args to the local Switchboard runner", async () => {
+test("forwards native relay status args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayStatusNative(
     ["relay-a", "--catalog-file", "relays/catalog.json", "--timeout-ms", "250"],
@@ -1409,7 +1409,7 @@ test("forwards native relay status args to the local Switchboard runner", async 
   assert.deepEqual(forwarded, ["relay-a", "--catalog-file", "relays/catalog.json", "--timeout-ms", "250"]);
 });
 
-test("forwards native relay watch args to the local Switchboard runner", async () => {
+test("forwards native relay watch args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRelayWatchNative(
     ["relay-d", "--max-runs", "3", "--interval-ms", "5000"],
@@ -1424,7 +1424,7 @@ test("forwards native relay watch args to the local Switchboard runner", async (
   assert.deepEqual(forwarded, ["relay-d", "--max-runs", "3", "--interval-ms", "5000"]);
 });
 
-test("forwards native gateway upgrade args to the local Switchboard runner", async () => {
+test("forwards native gateway upgrade args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardGatewayUpgradeNative(["--yes", "--dry-run"], {
     runner: async (argv) => {
@@ -1436,7 +1436,7 @@ test("forwards native gateway upgrade args to the local Switchboard runner", asy
   assert.deepEqual(forwarded, ["--yes", "--dry-run"]);
 });
 
-test("forwards native claimable args to the local Switchboard runner", async () => {
+test("forwards native claimable args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardClaimableNative(["--json", "--recipient", "0x0000000000000000000000000000000000000001"], {
     runner: async (argv) => {
@@ -1448,7 +1448,7 @@ test("forwards native claimable args to the local Switchboard runner", async () 
   assert.deepEqual(forwarded, ["--json", "--recipient", "0x0000000000000000000000000000000000000001"]);
 });
 
-test("forwards native claim args to the local Switchboard runner", async () => {
+test("forwards native claim args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardClaimNative(["--yes", "--claim-private-key-env", "OPERATOR_CLAIM_PRIVATE_KEY"], {
     runner: async (argv) => {
@@ -1460,7 +1460,7 @@ test("forwards native claim args to the local Switchboard runner", async () => {
   assert.deepEqual(forwarded, ["--yes", "--claim-private-key-env", "OPERATOR_CLAIM_PRIVATE_KEY"]);
 });
 
-test("forwards native refundable args to the local Switchboard runner", async () => {
+test("forwards native refundable args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRefundableNative(["--json", "--session-id", `0x${"11".repeat(32)}`], {
     runner: async (argv) => {
@@ -1472,7 +1472,7 @@ test("forwards native refundable args to the local Switchboard runner", async ()
   assert.deepEqual(forwarded, ["--json", "--session-id", `0x${"11".repeat(32)}`]);
 });
 
-test("forwards native session refundable args to the local Switchboard runner", async () => {
+test("forwards native session refundable args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardSessionRefundableNative(["--json", "--session-id", `0x${"11".repeat(32)}`], {
     runner: async (argv) => {
@@ -1484,7 +1484,7 @@ test("forwards native session refundable args to the local Switchboard runner", 
   assert.deepEqual(forwarded, ["--json", "--session-id", `0x${"11".repeat(32)}`]);
 });
 
-test("forwards native refund args to the local Switchboard runner", async () => {
+test("forwards native refund args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardRefundNative(["--yes", "--session-id", `0x${"11".repeat(32)}`], {
     runner: async (argv) => {
@@ -1496,7 +1496,7 @@ test("forwards native refund args to the local Switchboard runner", async () => 
   assert.deepEqual(forwarded, ["--yes", "--session-id", `0x${"11".repeat(32)}`]);
 });
 
-test("forwards native session refund args to the local Switchboard runner", async () => {
+test("forwards native session refund args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardSessionRefundNative(["--yes", "--session-id", `0x${"11".repeat(32)}`], {
     runner: async (argv) => {
@@ -1508,7 +1508,7 @@ test("forwards native session refund args to the local Switchboard runner", asyn
   assert.deepEqual(forwarded, ["--yes", "--session-id", `0x${"11".repeat(32)}`]);
 });
 
-test("forwards native context list args to the local Switchboard runner", async () => {
+test("forwards native context list args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardContextListNative(["--json", "--project-dir", "./app"], {
     runner: async (argv) => {
@@ -1520,7 +1520,7 @@ test("forwards native context list args to the local Switchboard runner", async 
   assert.deepEqual(forwarded, ["--json", "--project-dir", "./app"]);
 });
 
-test("forwards native context current args to the local Switchboard runner", async () => {
+test("forwards native context current args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardContextCurrentNative(["--json", "--context", "mainnet"], {
     runner: async (argv) => {
@@ -1532,7 +1532,7 @@ test("forwards native context current args to the local Switchboard runner", asy
   assert.deepEqual(forwarded, ["--json", "--context", "mainnet"]);
 });
 
-test("forwards native context use args to the local Switchboard runner", async () => {
+test("forwards native context use args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardContextUseNative(["mainnet", "--json"], {
     runner: async (argv) => {
@@ -1544,7 +1544,7 @@ test("forwards native context use args to the local Switchboard runner", async (
   assert.deepEqual(forwarded, ["mainnet", "--json"]);
 });
 
-test("forwards native context set args to the local Switchboard runner", async () => {
+test("forwards native context set args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardContextSetNative(["mainnet", "--relay-url", "https://relay.example", "--json"], {
     runner: async (argv) => {
@@ -1556,7 +1556,7 @@ test("forwards native context set args to the local Switchboard runner", async (
   assert.deepEqual(forwarded, ["mainnet", "--relay-url", "https://relay.example", "--json"]);
 });
 
-test("forwards native context add args to the local Switchboard runner", async () => {
+test("forwards native context add args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardContextAddNative(["mainnet", "--no-balance-check"], {
     runner: async (argv) => {
@@ -1568,7 +1568,7 @@ test("forwards native context add args to the local Switchboard runner", async (
   assert.deepEqual(forwarded, ["mainnet", "--no-balance-check"]);
 });
 
-test("forwards native context dns set args to the local Switchboard runner", async () => {
+test("forwards native context dns set args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardContextDnsSetNative(["cloudflare", "--token-env", "CF_TOKEN_PROD", "--json"], {
     runner: async (argv) => {
@@ -1580,7 +1580,7 @@ test("forwards native context dns set args to the local Switchboard runner", asy
   assert.deepEqual(forwarded, ["cloudflare", "--token-env", "CF_TOKEN_PROD", "--json"]);
 });
 
-test("forwards native context dns clear args to the local Switchboard runner", async () => {
+test("forwards native context dns clear args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardContextDnsClearNative(["cloudflare", "--context", "mainnet", "--json"], {
     runner: async (argv) => {
@@ -1592,7 +1592,7 @@ test("forwards native context dns clear args to the local Switchboard runner", a
   assert.deepEqual(forwarded, ["cloudflare", "--context", "mainnet", "--json"]);
 });
 
-test("forwards native deploy args to the local Switchboard runner", async () => {
+test("forwards native deploy args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardDeployNative(["--entrypoint", "src/index.ts", "--dry-run", "--json"], {
     runner: async (argv) => {
@@ -1669,7 +1669,7 @@ test("emits native deploy progress from proof runner events", async () => {
 
   assert.equal(captured.result, 0);
   assert.match(captured.stdout, /Deployment progress/);
-  assert.match(captured.stdout, /Switchboard Runner/);
+  assert.match(captured.stdout, /Baran Runner/);
   assert.match(captured.stdout, /Run context/);
   assert.doesNotMatch(captured.stdout, /Capacity selection/);
   assert.match(captured.stdout, /Selected processor/);
@@ -1730,7 +1730,7 @@ test("restores colored native deploy progress headers and markers", async () => 
 
   assert.equal(captured.result, 0);
   assert.match(captured.stdout, /\u001b\[38;2;255;106;44m/);
-  assert.match(captured.stdout, /Switchboard Runner/);
+  assert.match(captured.stdout, /Baran Runner/);
   assert.match(captured.stdout, /\u001b\[32m\[ok\]\u001b\[0m/);
 });
 
@@ -2057,7 +2057,7 @@ test("falls back to legacy operator-capabilities reports for older relays", asyn
   });
 });
 
-test("forwards native launch-demo args to the local Switchboard runner", async () => {
+test("forwards native launch-demo args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardLaunchDemoNative(["--dry-run", "--json"], {
     runner: async (argv) => {
@@ -2156,7 +2156,7 @@ test("emits native launch-demo progress from proof runner events", async () => {
       options?.progress?.({ type: "line", section: "Demo project", status: "wait", label: "Dependencies", detail: "installing demo package" });
       options?.progress?.({ type: "line", section: "Demo project", status: "warn", label: "npm", detail: "deprecated package" });
       options?.progress?.({ type: "line", section: "Demo project", status: "ok", label: "Dependencies", detail: "installed added 24 packages in 2s" });
-      options?.progress?.({ type: "line", section: "Switchboard demo", label: "Demo package", detail: "0.2.0" });
+      options?.progress?.({ type: "line", section: "Baran demo", label: "Demo package", detail: "0.2.0" });
       options?.progress?.({ type: "wait", step: "capacity_selection", detail: "checking operator capacity" });
       options?.progress?.({ type: "workflow", event: "capacity_selected", details: { processor: "5GrwvaEF5zXb26Fz9rcQpDWSXg7yFRqXBnhJUjqbkNbA" } });
       options?.progress?.({ type: "workflow", event: "intent_created", details: { intentId: "di_demo" } });
@@ -2236,9 +2236,9 @@ test("prints runner header after externally rendered launch-demo summary", async
   const captured = await captureConsole(async () => runSwitchboardLaunchDemoNative(["--yes-spend"], {
     runner: async (_argv, options) => {
       console.log("");
-      console.log("Switchboard demo");
+      console.log("Baran demo");
       console.log("Network           polkadot-hub / Acurast mainnet");
-      options?.progress?.({ type: "section", section: "Switchboard demo" });
+      options?.progress?.({ type: "section", section: "Baran demo" });
       options?.progress?.({ type: "workflow", event: "intent_created", details: { intentId: "di_external_demo" } });
     }
   }));
@@ -2246,7 +2246,7 @@ test("prints runner header after externally rendered launch-demo summary", async
   assert.equal(captured.result, 0);
   assert.match(
     captured.stdout,
-    /Switchboard demo\nNetwork\s+polkadot-hub \/ Acurast mainnet\n\nSwitchboard Runner\n  \[ok\] Deployment intent: di_external_demo/
+    /Baran demo\nNetwork\s+polkadot-hub \/ Acurast mainnet\n\nSwitchboard Runner\n  \[ok\] Deployment intent: di_external_demo/
   );
 });
 
@@ -2293,9 +2293,9 @@ test("prints runner header after externally rendered deploy summary", async () =
   ], {
     runner: async (_argv, options) => {
       console.log("");
-      console.log("Switchboard deploy");
+      console.log("Baran deploy");
       console.log("Network  polkadot-hub");
-      options?.progress?.({ type: "section", section: "Switchboard deploy" });
+      options?.progress?.({ type: "section", section: "Baran deploy" });
       options?.progress?.({ type: "workflow", event: "intent_created", details: { intentId: "di_external_deploy" } });
     }
   }));
@@ -2303,7 +2303,7 @@ test("prints runner header after externally rendered deploy summary", async () =
   assert.equal(captured.result, 0);
   assert.match(
     captured.stdout,
-    /Switchboard deploy\nNetwork\s+polkadot-hub\n\nSwitchboard Runner\n  \[ok\] Deployment intent: di_external_deploy/
+    /Baran deploy\nNetwork\s+polkadot-hub\n\nSwitchboard Runner\n  \[ok\] Deployment intent: di_external_deploy/
   );
 });
 
@@ -2421,7 +2421,7 @@ test("keeps HA launch-demo json output free of progress text", async () => {
   assert.deepEqual(JSON.parse(captured.stdout), { ok: true, action: "launch-demo-ha" });
 });
 
-test("forwards native bootstrap args to the local Switchboard runner", async () => {
+test("forwards native bootstrap args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardBootstrapNative(["host", "status", "--profile", "mainnet"], {
     runner: async (argv) => {
@@ -2433,7 +2433,7 @@ test("forwards native bootstrap args to the local Switchboard runner", async () 
   assert.deepEqual(forwarded, ["host", "status", "--profile", "mainnet"]);
 });
 
-test("forwards native ops args to the local Switchboard runner", async () => {
+test("forwards native ops args to the local Baran runner", async () => {
   let forwarded: readonly string[] | undefined;
   const exitCode = await runSwitchboardOpsNative(["init", "--profile", "mainnet", "--force"], {
     runner: async (argv) => {
@@ -2452,7 +2452,7 @@ function runPluginCommand(args: readonly string[]) {
       "--import",
       "tsx",
       "--eval",
-      `const {default: Switchboard} = await import(${JSON.stringify(commandUrl)}); await Switchboard.run(${JSON.stringify(args)});`
+      `const {default: Baran} = await import(${JSON.stringify(commandUrl)}); await Baran.run(${JSON.stringify(args)});`
     ],
     {
       cwd: repoRoot,

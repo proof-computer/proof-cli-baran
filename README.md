@@ -1,6 +1,6 @@
-# PROOF CLI Switchboard Plugin
+# PROOF CLI Baran Plugin
 
-`@proof-computer/proof-cli-switchboard` adds Switchboard commands to the public
+`@proof-computer/proof-cli-switchboard` adds Baran commands to the public
 `proof` CLI.
 
 ## PROOF Ingress parachain
@@ -21,16 +21,16 @@ comes from the target. Every mutating command is a dry-run preview until `--yes`
   generation, refund state).
 
 ```
-proof switchboard lease  --target proof-ingress-local --broker-id 0 --route-class-id 42 \
+proof baran lease  --target proof-ingress-local --broker-id 0 --route-class-id 42 \
                          --hostname app.example.com --lease-epochs 10 --polkadot-seed //Alice --yes
-proof switchboard route  --target proof-ingress-local --route-id 0x... --json
-proof switchboard claim  --target proof-ingress-local --polkadot-seed //Alice --yes
+proof baran route  --target proof-ingress-local --route-id 0x... --json
+proof baran claim  --target proof-ingress-local --polkadot-seed //Alice --yes
 ```
 
 The Hub EVM commands are unchanged. `test/proof-ingress-live.test.ts` is a gated
 end-to-end shakeout (`PROOF_INGRESS_LIVE=1`) against a fast-epochs node.
 
-The plugin exposes `proof switchboard ...` through native oclif commands backed
+The plugin exposes `proof baran ...` through native oclif commands backed
 by runner implementations owned by this package. Project
 initialization `init` and `project init`, fresh `deploy`,
 `launch-demo`, read-only `project show`, `preflight`,
@@ -64,21 +64,21 @@ inventory tools. Relay lifecycle-management verbs are not being migrated:
 `relay deploy`, `relay replace`, `relay rotate-key`, `relay drain`,
 `relay promote`, `relay deployments`, `relay deployment-status`, and
 `relay inspect` are dropped internal subcommands, not compatibility surfaces.
-The standalone `switchboard` compatibility bridge has been removed from the
+The standalone `baran` compatibility bridge has been removed from the
 acceptance surface. Acurast remains an internal implementation detail of the
-native Switchboard commands; the plugin does not expose a public
-`proof switchboard acurast ...` command family.
+native Baran commands; the plugin does not expose a public
+`proof baran acurast ...` command family.
 
 ## Install
 
 ```fish
 npm install --global @proof-computer/proof-cli
 proof plugins install @proof-computer/proof-cli-switchboard
-proof switchboard --help
+proof baran --help
 ```
 
-No standalone Switchboard CLI package is required for `proof switchboard`; new
-Switchboard CLI work belongs in this oclif plugin.
+No standalone Baran CLI package is required for `proof baran`; new
+Baran CLI work belongs in this oclif plugin.
 
 ## Development
 
