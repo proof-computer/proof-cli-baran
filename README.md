@@ -108,3 +108,9 @@ functions such as `runSwitchboardDeploy(argv, options)` and
 Deploy and launch-demo progress is emitted through the proof plugin progress
 reporter. Human progress is suppressed for `--json`, which remains reserved for
 machine-readable output.
+
+## License
+
+This package is licensed under the Functional Source License 1.1, with Apache-2.0
+as the future license. Earlier release tags remain under their previous terms.
+See [LICENSE](LICENSE) for the full terms.
